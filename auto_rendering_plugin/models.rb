@@ -8,8 +8,9 @@ if !file_loaded?(__FILE__)
                 old_fn = instance_method(:connection)
 
                 define_method(:connection) do
-                    old_fn.bind(self).()
+                    con = old_fn.bind(self).()
                     Net::HTTP::Persistent.const_set("DEFAULT_POOL_SIZE", 256)
+                    return con
                 end
             end
         end
