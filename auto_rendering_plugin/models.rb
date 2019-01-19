@@ -3,6 +3,9 @@ require "airrecord"
 if !file_loaded?(__FILE__)
     # Workaround for airrecord net-http lib to work on Windows
     if Gem.win_platform?
+        # Avoid uninitialized error
+        Process.const_set("RLIMIT_NOFILE", "foo")
+
         module Airrecord
             class Client
                 old_fn = instance_method(:connection)
