@@ -1,8 +1,20 @@
 require "airrecord"
 
-# Workaround for airrecord net-http lib to work on Windows
-if Gem.win_platform?
-    Net::HTTP::Persistent.const_set("DEFAULT_POOL_SIZE", 256)
+if !file_loaded?(__FILE__)
+    # Workaround for airrecord net-http lib to work on Windows
+    if Gem.win_platform?
+        module Airrecord
+            class Client
+                old_fn = instance_method(:connection)
+
+                define_method(:connection) do
+                    old_fn.bind(self).()
+                    Net::HTTP::Persistent.const_set("DEFAULT_POOL_SIZE", 256)
+                end
+            end
+        end
+    end
+    file_loaded(__FILE__)
 end
 
 module FinishVisionVR
