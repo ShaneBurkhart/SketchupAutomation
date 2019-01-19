@@ -9,8 +9,9 @@ if !file_loaded?(__FILE__)
 
             def self.getrlimit(arg)
                 # We want 256 and the calc divides by 4
+                # It's in array because it grabs first()
                 # net http persistent files
-                return 256*4
+                return [256*4]
             end
         end
 
