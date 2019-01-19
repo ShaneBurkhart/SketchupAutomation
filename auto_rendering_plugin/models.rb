@@ -1,5 +1,10 @@
 require "airrecord"
 
+# Workaround for airrecord net-http lib to work on Windows
+if Gem.win_platform?
+    Net::HTTP::Persistent.const_set("DEFAULT_POOL_SIZE", 256)
+end
+
 module FinishVisionVR
     module RenderingPlugin
         class Unit < Airrecord::Table
