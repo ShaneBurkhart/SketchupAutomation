@@ -1,29 +1,16 @@
 require "airrecord"
 
 if !file_loaded?(__FILE__)
-    # Workaround for airrecord net-http lib to work on Windows
+    # Workaround for net-http-persistent lib not working on windows.
+    # The RLIMIT_NOFILE isn't defined and getrlimit() throws unimplemented on machine error
+    # We are overriding to end up with DEFAULT_POOL_SIZE = 256 in Net::HTTP:Persistent
     if Gem.win_platform?
         module Process
-            # Avoid uninitialized error
             RLIMIT_NOFILE = "foo"
 
+            # Normally returns an array of two values [low_val, high_val]
             def self.getrlimit(arg)
-                # We want 256 and the calc divides by 4
-                # It's in array because it grabs first()
-                # net http persistent files
                 return [256*4]
-            end
-        end
-
-        module Airrecord
-            class Client
-                old_fn = instance_method(:connection)
-
-                define_method(:connection) do
-                    con = old_fn.bind(self).()
-                    Net::HTTP::Persistent.const_set("DEFAULT_POOL_SIZE", 256)
-                    return con
-                end
             end
         end
     end
