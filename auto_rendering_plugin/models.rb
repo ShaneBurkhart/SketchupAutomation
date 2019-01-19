@@ -3,8 +3,16 @@ require "airrecord"
 if !file_loaded?(__FILE__)
     # Workaround for airrecord net-http lib to work on Windows
     if Gem.win_platform?
-        # Avoid uninitialized error
-        Process.const_set("RLIMIT_NOFILE", "foo")
+        module Process
+            # Avoid uninitialized error
+            RLIMIT_NOFILE = "foo"
+
+            def self.getrlimit()
+                # We want 256 and the calc divides by 4
+                # net http persistent files
+                return 256*4
+            end
+        end
 
         module Airrecord
             class Client
