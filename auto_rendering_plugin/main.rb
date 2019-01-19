@@ -85,8 +85,8 @@ module FinishVisionVR
             shadowinfo = model.shadow_info
 
             #Set lat and long to 0, 0 for better sun positioning
-            shadowinfo["Latitude"] = 0
-            shadowinfo["Longitude"] = 20.0
+            shadowinfo["Latitude"] = 20.0
+            shadowinfo["Longitude"] = 0
             shadowinfo["Country"] = "USA"
             shadowinfo["Location"] = "Springfield (MO)"
 
