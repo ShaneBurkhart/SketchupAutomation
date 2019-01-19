@@ -1,4 +1,5 @@
 require "sketchup.rb"
+require "auto_rendering_plugin/models.rb"
 
 # TODO Pos floor plan camera
 # TODO Sync view camera positions with Airtable
@@ -44,18 +45,37 @@ require "sketchup.rb"
 
 module FinishVisionVR
     module RenderingPlugin
-        # The name of the file should give us the
+        # The name of the file should give us the record ID for the unit
         def self.get_unit_id
-
+            model = Sketchup.active_model
+            title = model.title || ""
+            title_parts = title.split("-")
+            return nil if title_parts.length == 0
+            return title_parts[0].strip
         end
+
         # Goes through each view and updates the camera locations in Airtables
         def self.update_camera_locations
+            unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
+            u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
+            return UI.messagebox("Unit not found...") if u.nil?
+            panos = u.panos
+
             model = Sketchup.active_model
             model.pages.each do |p|
+                name = p.name
+                pano = panos.find { |pa| pa["Name"] == name }
+                next if pano.nil?
+
                 eye = p.camera.eye
-                x = eye[0]
-                y = eye[1]
-                z = eye[2]
+                x = eye[0].to_m
+                y = eye[1].to_m
+                z = eye[2].to_m
+
+                pano["Scene Camera X"] = x
+                pano["Scene Camera Y"] = y
+                pano["Scene Camera Z"] = z
+                pano.save
             end
         end
 
