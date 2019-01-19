@@ -7,7 +7,7 @@ if !file_loaded?(__FILE__)
             # Avoid uninitialized error
             RLIMIT_NOFILE = "foo"
 
-            def self.getrlimit()
+            def self.getrlimit(arg)
                 # We want 256 and the calc divides by 4
                 # net http persistent files
                 return 256*4
