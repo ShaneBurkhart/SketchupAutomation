@@ -89,6 +89,7 @@ module FinishVisionVR
             shadowinfo["Longitude"] = 0
             shadowinfo["Country"] = "USA"
             shadowinfo["Location"] = "Springfield (MO)"
+            shadow["ShadowTime"] = Time.new(2019,10,8, 13,30,0, "+00:00").utc
 
             key = "GeoReference"
             # Need to set these attrs too for the geo location to take effect
