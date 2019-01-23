@@ -39,8 +39,10 @@ module FinishVisionVR
             )
             dialog.set_url COMPONENT_SEARCH_URL
             dialog.add_action_callback("add_to_model") { |action_context, url|
-                dialog.close
-                FinishVisionVR::DrawingPlugin.place_component(url)
+                UI.start_timer(1.0, false) {
+                    dialog.close
+                    FinishVisionVR::DrawingPlugin.place_component(url)
+                }
             }
             dialog.show
         end
@@ -48,9 +50,7 @@ module FinishVisionVR
         def self.place_component(url)
             model = Sketchup.active_model
             comp = model.definitions.load_from_url(url, FinishVisionVR::ComponentLoadHandler.new(url))
-            UI.messagebox("Loaded")
             return if comp.nil?
-            UI.messagebox("Place that")
             Sketchup.active_model.place_component(comp)
         end
 
