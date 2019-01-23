@@ -19,7 +19,6 @@ module FinishVisionVR
 
         def onSuccess
             Sketchup::set_status_text('')
-            UI.messagebox("Handler loaded")
         end
 
         def onFailure(error_message)
