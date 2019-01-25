@@ -86,20 +86,20 @@ module FinishVisionVR
 
             #Set lat and long to 0, 0 for better sun positioning
             shadowinfo["Latitude"] = 20.0
-            shadowinfo["Longitude"] = 0
+            shadowinfo["Longitude"] = 270.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
-            shadowinfo["ShadowTime"] = Time.new(2019,11,8, 13,30,0, "+00:00")
+            shadowinfo["ShadowTime"] = Time.new(2019,11,1, 13,30,0, "+00:00")
 
-            key = "GeoReference"
+            #key = "GeoReference"
             # Need to set these attrs too for the geo location to take effect
-            model.set_attribute(key, "GeoReferenceNorthAngle", 1.0273142796314674)
-            model.set_attribute(key, "Latitude", 20.0)
-            model.set_attribute(key, "Longitude", 0.0)
-            model.set_attribute(key, "LocationSource", "Manual")
-            model.set_attribute(key, "ModelTranslationX", -7325735.416097383)
-            model.set_attribute(key, "ModelTranslationY", -87176930.16949995)
-            model.set_attribute(key, "UsesGeoReferencing", true)
+            #model.set_attribute(key, "GeoReferenceNorthAngle", 1.0273142796314674)
+            #model.set_attribute(key, "Latitude", 20.0)
+            #model.set_attribute(key, "Longitude", 0.0)
+            #model.set_attribute(key, "LocationSource", "Manual")
+            #model.set_attribute(key, "ModelTranslationX", -7325735.416097383)
+            #model.set_attribute(key, "ModelTranslationY", -87176930.16949995)
+            #model.set_attribute(key, "UsesGeoReferencing", true)
         end
 
 
