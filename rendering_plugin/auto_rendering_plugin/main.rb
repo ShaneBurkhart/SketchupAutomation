@@ -79,8 +79,20 @@ module FinishVisionVR
             end
         end
 
-        # Sets the geolocation to 0,0.  Nothing particular to floor plan now.
         def self.set_floor_plan_geolocation
+            model = Sketchup.active_model
+            shadowinfo = model.shadow_info
+
+            #Set lat and long to 0, 0 for better sun positioning
+            shadowinfo["Latitude"] = 20.0
+            shadowinfo["Longitude"] = 270.0
+            shadowinfo["Country"] = "USA"
+            shadowinfo["City"] = "Springfield (MO)"
+            shadowinfo["ShadowTime"] = Time.new(2019,8,20, 12,0,0, "+00:00")
+        end
+
+        # Sets the geolocation to 0,0.  Nothing particular to floor plan now.
+        def self.set_pano_geolocation
             model = Sketchup.active_model
             shadowinfo = model.shadow_info
 
@@ -162,7 +174,10 @@ module FinishVisionVR
             finish_vision_menu.add_item("Floor Plan Camera") {
                 FinishVisionVR::RenderingPlugin.floor_plan_camera_for_selection
             }
-            finish_vision_menu.add_item("Set Geolocation") {
+            finish_vision_menu.add_item("Set Geolocation (Floor Plan)") {
+                FinishVisionVR::RenderingPlugin.set_floor_plan_geolocation
+            }
+            finish_vision_menu.add_item("Set Geolocation (Panorama)") {
                 FinishVisionVR::RenderingPlugin.set_floor_plan_geolocation
             }
             finish_vision_menu.add_item("Update Camera Locations") {
