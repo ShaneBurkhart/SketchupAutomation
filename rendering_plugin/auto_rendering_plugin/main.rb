@@ -88,7 +88,7 @@ module FinishVisionVR
             shadowinfo["Latitude"] = 20.0
             shadowinfo["Longitude"] = 0
             shadowinfo["Country"] = "USA"
-            shadowinfo["Location"] = "Springfield (MO)"
+            shadowinfo["City"] = "Springfield (MO)"
             shadowinfo["ShadowTime"] = Time.new(2019,11,8, 13,30,0, "+00:00")
 
             key = "GeoReference"
