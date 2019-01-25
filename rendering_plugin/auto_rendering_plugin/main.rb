@@ -178,7 +178,7 @@ module FinishVisionVR
                 FinishVisionVR::RenderingPlugin.set_floor_plan_geolocation
             }
             finish_vision_menu.add_item("Set Geolocation (Panorama)") {
-                FinishVisionVR::RenderingPlugin.set_floor_plan_geolocation
+                FinishVisionVR::RenderingPlugin.set_pano_geolocation
             }
             finish_vision_menu.add_item("Update Camera Locations") {
                 FinishVisionVR::RenderingPlugin.update_camera_locations
