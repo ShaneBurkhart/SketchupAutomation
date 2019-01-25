@@ -102,33 +102,29 @@ module FinishVisionVR
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
             shadowinfo["ShadowTime"] = Time.new(2019,11,1, 13,30,0, "+00:00")
-
-            #key = "GeoReference"
-            # Need to set these attrs too for the geo location to take effect
-            #model.set_attribute(key, "GeoReferenceNorthAngle", 1.0273142796314674)
-            #model.set_attribute(key, "Latitude", 20.0)
-            #model.set_attribute(key, "Longitude", 0.0)
-            #model.set_attribute(key, "LocationSource", "Manual")
-            #model.set_attribute(key, "ModelTranslationX", -7325735.416097383)
-            #model.set_attribute(key, "ModelTranslationY", -87176930.16949995)
-            #model.set_attribute(key, "UsesGeoReferencing", true)
         end
 
 
-        def self.floor_plan_camera_for_selection
+        def self.floor_plan_camera
             model = Sketchup.active_model
-            selection = model.selection
+            # Disable transition time
+            model.pages.each { |p| p.transition_time = 0 }
+            model.pages.each do |p|
+                if p.name == "Floor Plan"
+                    model.pages.selected_page = p
+                    break
+                end
+            end
 
-            if selection.empty?
-                UI.messagebox("Please select the components you want a floor plan of.")
-                return
+            walls = []
+            Sketchup.active_model.entities.each do |e|
+                # 72 = 7' Most walls are at least 7'
+                walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 72
             end
 
             # Create a virtual bounding box
             bbox = Geom::BoundingBox.new
-            # For each entity in the selection array, ...
-            #  add to it the bounding box of each entity
-            selection.each { |ent| bbox.add(ent.bounds) rescue nil }
+            walls.each { |ent| bbox.add(ent.bounds) rescue nil }
             # Get the bottom front left corner as a Geom::Point3d
             origin = bbox.corner(0)
             # Use Ruby's multiple assignment
@@ -172,7 +168,7 @@ module FinishVisionVR
             tools_menu = UI.menu("Tools")
             finish_vision_menu = tools_menu.add_submenu("FinishVisionVR")
             finish_vision_menu.add_item("Floor Plan Camera") {
-                FinishVisionVR::RenderingPlugin.floor_plan_camera_for_selection
+                FinishVisionVR::RenderingPlugin.floor_plan_camera
             }
             finish_vision_menu.add_item("Set Geolocation (Floor Plan)") {
                 FinishVisionVR::RenderingPlugin.set_floor_plan_geolocation
