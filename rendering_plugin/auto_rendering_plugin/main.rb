@@ -63,8 +63,12 @@ module FinishVisionVR
 
             model = Sketchup.active_model
             model.pages.each do |p|
-                name = p.name
-                pano = panos.find { |pa| pa["Name"] == name }
+                # Some pages are labeld "Pano" at the end.
+                name = p.name.gsub(" Pano", "")
+                pano = panos.find do |pa|
+                    # Try both name and name + " Room"
+                    return pa["Name"] == name or pa["Name"] == "#{name} Room"
+                end
                 next if pano.nil?
 
                 eye = p.camera.eye
@@ -107,14 +111,20 @@ module FinishVisionVR
 
         def self.floor_plan_camera
             model = Sketchup.active_model
+            floor_plan_page = nil
+            exterior_plan_page = nil
             # Disable transition time
             model.pages.each { |p| p.transition_time = 0 }
             model.pages.each do |p|
                 if p.name == "Floor Plan"
-                    model.pages.selected_page = p
-                    break
+                    floor_plan_page = p
+                end
+                if p.name == "Exterior"
+                    exterior_plan_page = p
                 end
             end
+
+            model.pages.selected_page = floor_plan_page || exterior_plan_page
 
             walls = []
             Sketchup.active_model.entities.each do |e|
