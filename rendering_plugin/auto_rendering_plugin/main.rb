@@ -67,7 +67,7 @@ module FinishVisionVR
                 name = p.name.gsub(" Pano", "")
                 pano = panos.find do |pa|
                     # Try both name and name + " Room"
-                    return pa["Name"] == name or pa["Name"] == "#{name} Room"
+                    return (pa["Name"] == name or pa["Name"] == "#{name} Room")
                 end
                 next if pano.nil?
 
