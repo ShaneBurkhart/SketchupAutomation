@@ -46,12 +46,33 @@ require "auto_rendering_plugin/models.rb"
 module FinishVisionVR
     module RenderingPlugin
         # The name of the file should give us the record ID for the unit
-        def self.get_unit_id
+        def self.get_unit_version_id
             model = Sketchup.active_model
             title = model.title || ""
             title_parts = title.split("-")
             return nil if title_parts.length == 0
             return title_parts[0].strip
+        end
+
+        def self.get_unit_id
+            unit_version_id = FinishVisionVR::RenderingPlugin.get_unit_version_id
+            uv = FinishVisionVR::RenderingPlugin::UnitVersion.find(unit_version_id)
+            return uv["Unit ID"][0]
+        end
+
+        def self.create_pano_scenes
+            unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
+            u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
+            return UI.messagebox("Unit not found...") if u.nil?
+            model = Sketchup.active_model
+            panos = u.panos
+
+            panos.each do |p|
+                exists = model.pages.find { |t| t.name == p["Name"] }
+                next unless exists.nil?
+
+                model.pages.add(p["Name"])
+            end
         end
 
         # Goes through each view and updates the camera locations in Airtables
@@ -63,12 +84,8 @@ module FinishVisionVR
 
             model = Sketchup.active_model
             model.pages.each do |p|
-                # Some pages are labeld "Pano" at the end.
-                name = p.name.gsub(" Pano", "")
-                pano = panos.find do |pa|
-                    # Try both name and name + " Room"
-                    next (pa["Name"] == name or pa["Name"] == "#{name} Room")
-                end
+                name = p.name
+                pano = panos.find { |pa| pa["Name"] == name }
                 next if pano.nil?
 
                 eye = p.camera.eye
@@ -188,6 +205,9 @@ module FinishVisionVR
             }
             finish_vision_menu.add_item("Update Camera Locations") {
                 FinishVisionVR::RenderingPlugin.update_camera_locations
+            }
+            finish_vision_menu.add_item("Create Pano Scenes") {
+                FinishVisionVR::RenderingPlugin.create_pano_scenes
             }
         end
 

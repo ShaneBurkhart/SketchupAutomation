@@ -19,6 +19,11 @@ end
 
 module FinishVisionVR
     module RenderingPlugin
+        class UnitVersion < Airrecord::Table
+            self.base_key = FinishVisionVR::RenderingPlugin::AIRTABLE_RENDERING_APP_ID
+            self.table_name = "Unit Versions"
+        end
+
         class Unit < Airrecord::Table
             self.base_key = FinishVisionVR::RenderingPlugin::AIRTABLE_RENDERING_APP_ID
             self.table_name = "Units"
