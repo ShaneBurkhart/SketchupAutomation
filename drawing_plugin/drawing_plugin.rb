@@ -8,7 +8,7 @@ module FinishVisionVR
         end
 
         if !file_loaded?(__FILE__)
-            FinishVisionVR::RenderingPlugin.install_gems
+            FinishVisionVR::DrawingPlugin.install_gems
             require "secrets.rb"
 
             ex = SketchupExtension.new('FinishVisionVR - Drawing', 'drawing_plugin/main')
