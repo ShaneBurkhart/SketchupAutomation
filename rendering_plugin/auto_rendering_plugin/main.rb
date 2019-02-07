@@ -109,7 +109,7 @@ module FinishVisionVR
             shadowinfo["Longitude"] = 270.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
-            shadowinfo["ShadowTime"] = Time.new(2019,8,20, 12,0,0, "+00:00")
+            shadowinfo["ShadowTime"] = Time.new(2019,8,20, 12,30,0, "+00:00")
         end
 
         # Sets the geolocation to 0,0.  Nothing particular to floor plan now.
