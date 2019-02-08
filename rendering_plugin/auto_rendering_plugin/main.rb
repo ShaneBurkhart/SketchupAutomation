@@ -106,7 +106,7 @@ module FinishVisionVR
 
             #Set lat and long to 0, 0 for better sun positioning
             shadowinfo["Latitude"] = 20.0
-            shadowinfo["Longitude"] = 270.0
+            shadowinfo["Longitude"] = 0.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
             shadowinfo["ShadowTime"] = Time.new(2019,8,20, 12,30,0, "+00:00")
@@ -119,7 +119,7 @@ module FinishVisionVR
 
             #Set lat and long to 0, 0 for better sun positioning
             shadowinfo["Latitude"] = 20.0
-            shadowinfo["Longitude"] = 270.0
+            shadowinfo["Longitude"] = 0.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
             shadowinfo["ShadowTime"] = Time.new(2019,11,1, 13,30,0, "+00:00")
