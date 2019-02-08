@@ -109,6 +109,7 @@ module FinishVisionVR
             shadowinfo["Longitude"] = 0.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
+            shadowinfo["TZOffset"] = 0.0
             shadowinfo["ShadowTime"] = Time.new(2019,8,20, 12,30,0, "+00:00")
         end
 
@@ -122,6 +123,7 @@ module FinishVisionVR
             shadowinfo["Longitude"] = 0.0
             shadowinfo["Country"] = "USA"
             shadowinfo["City"] = "Springfield (MO)"
+            shadowinfo["TZOffset"] = 0.0
             shadowinfo["ShadowTime"] = Time.new(2019,11,1, 13,30,0, "+00:00")
         end
 
