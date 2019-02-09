@@ -83,6 +83,8 @@ module FinishVisionVR
             panos = u.panos
 
             model = Sketchup.active_model
+            # Turn off scene transition times
+            model.options["PageOptions"]["TransitionTime"] = 0
             model.pages.each do |p|
                 name = p.name
                 pano = panos.find { |pa| pa["Name"] == name }
