@@ -9,7 +9,7 @@ module FinishVisionVR
 
         if !file_loaded?(__FILE__)
             FinishVisionVR::RenderingPlugin.install_gems
-            require "secrets.rb"
+            require "auto_rendering_plugin/secrets.rb"
 
             ex = SketchupExtension.new('FinishVisionVR - Auto Rendering', 'auto_rendering_plugin/main')
             ex.description = 'SketchUp Ruby API example creating a custom tool.'

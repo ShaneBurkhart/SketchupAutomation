@@ -67,11 +67,32 @@ module FinishVisionVR
             model = Sketchup.active_model
             panos = u.panos
 
+            # Switch to "Ceiling" scene so the ceiling is on.
+            ceiling_page = model.pages.find { |p| p.name == "Ceiling" }
+            model.pages.selected_page = ceiling_page unless ceiling_page.nil?
+
             panos.each do |p|
                 exists = model.pages.find { |t| t.name == p["Name"] }
                 next unless exists.nil?
 
-                model.pages.add(p["Name"])
+                page = model.pages.add(p["Name"])
+
+                if !p["Scene Camera Target Vector"].nil?
+                  x = p["Scene Camera X"]
+                  y = p["Scene Camera Y"]
+                  z = p["Scene Camera Z"]
+                  eye = [x.m, y.m, z.m]
+                  target = JSON.parse(p["Scene Camera Target Vector"]) || [1,0,0]
+                  up = JSON.parse(p["Scene Camera Up Vector"]) || [0,0,1]
+                  puts eye
+                  puts target
+                  puts up
+
+                  page.use_camera = false
+                  page.camera.set(eye, target, up)
+                  page.update(1)
+                  page.use_camera = true
+                end
             end
         end
 
@@ -91,6 +112,8 @@ module FinishVisionVR
                 next if pano.nil?
 
                 eye = p.camera.eye
+                target = p.camera.target
+                up = p.camera.up
                 x = eye[0].to_m
                 y = eye[1].to_m
                 z = eye[2].to_m
@@ -98,6 +121,8 @@ module FinishVisionVR
                 pano["Scene Camera X"] = x
                 pano["Scene Camera Y"] = y
                 pano["Scene Camera Z"] = z
+                pano["Scene Camera Target Vector"] = target.to_a.to_s
+                pano["Scene Camera Up Vector"] = up.to_a.to_s
                 pano.save
             end
         end
