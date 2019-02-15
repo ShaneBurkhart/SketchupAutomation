@@ -37,18 +37,31 @@ module FinishVisionVR
                 height: 600,
             )
             dialog.set_url COMPONENT_SEARCH_URL
-            dialog.add_action_callback("add_to_model") { |action_context, url|
+            dialog.add_action_callback("add_to_model") { |action_context, url, type|
                 UI.start_timer(1.0, false) {
                     dialog.close
-                    FinishVisionVR::DrawingPlugin.place_component(url)
+                    model = Sketchup.active_model
+                    comp = FinishVisionVR::DrawingPlugin.load_component(url)
+
+                    case type
+                    when "Flooring"
+                      # It's only a material so we add to the model, set to current material and select paint bucket.
+                      material = model.materials.find { |m| m.name.start_with? "FV -" }
+                      Sketchup.active_model.materials.current = material unless material.nil?
+                    else
+                      FinishVisionVR::DrawingPlugin.place_component(comp)
+                    end
                 }
             }
             dialog.show
         end
 
-        def self.place_component(url)
-            model = Sketchup.active_model
-            comp = model.definitions.load_from_url(url, FinishVisionVR::ComponentLoadHandler.new(url))
+        def self.load_component(url)
+          model = Sketchup.active_model
+          comp = model.definitions.load_from_url(url, FinishVisionVR::ComponentLoadHandler.new(url))
+        end
+
+        def self.place_component(comp)
             return if comp.nil?
             Sketchup.active_model.place_component(comp)
         end
