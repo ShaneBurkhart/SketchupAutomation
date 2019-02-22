@@ -68,11 +68,11 @@ module FinishVisionVR
             panos = u.panos
 
             # Switch to "Ceiling" scene so the ceiling is on.
-            ceiling_page = model.pages.find { |p| p.name == "Ceiling" }
+            ceiling_page = model.pages.find { |p| p.name.strip == "Ceiling" }
             model.pages.selected_page = ceiling_page unless ceiling_page.nil?
 
             panos.each do |p|
-                exists = model.pages.find { |t| t.name == p["Name"] }
+                exists = model.pages.find { |t| t.name.strip == p["Name"] }
                 next unless exists.nil?
 
                 page = model.pages.add(p["Name"])
@@ -107,7 +107,7 @@ module FinishVisionVR
             # Turn off scene transition times
             model.options["PageOptions"]["TransitionTime"] = 0
             model.pages.each do |p|
-                name = p.name
+                name = p.name.strip
                 pano = panos.find { |pa| pa["Name"] == name }
                 next if pano.nil?
 
