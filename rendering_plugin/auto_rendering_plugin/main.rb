@@ -45,6 +45,11 @@ require "auto_rendering_plugin/models.rb"
 
 module FinishVisionVR
     module RenderingPlugin
+        # Try not to use spaces
+        PANO_NAME_LOOKUP = {
+          "living room" => ["living room", "living"]
+        }
+
         # The name of the file should give us the record ID for the unit
         def self.get_unit_version_id
             model = Sketchup.active_model
@@ -60,6 +65,18 @@ module FinishVisionVR
             return uv["Unit ID"][0]
         end
 
+        def self.get_page_for_pano(name)
+          return nil if name.nil? or name == ""
+          model = Sketchup.active_model
+          name = name.strip.downcase
+          searches = FinishVisionVR::RenderingPlugin::PANO_NAME_LOOKUP[name] || [name]
+
+          model.pages.find do |p|
+            n = p.name.downcase
+            !!searches.find { |s| n.include? s }
+          end
+        end
+
         def self.create_pano_scenes
             unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
             u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
@@ -68,31 +85,28 @@ module FinishVisionVR
             panos = u.panos
 
             # Switch to "Ceiling" scene so the ceiling is on.
-            ceiling_page = model.pages.find { |p| p.name.strip == "Ceiling" }
+            ceiling_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Ceiling")
             model.pages.selected_page = ceiling_page unless ceiling_page.nil?
 
             panos.each do |p|
-                exists = model.pages.find { |t| t.name.strip == p["Name"] }
-                next unless exists.nil?
+              exists = FinishVisionVR::RenderingPlugin.get_page_for_pano(p["Name"])
+              next unless exists.nil?
 
-                page = model.pages.add(p["Name"])
+              page = model.pages.add(p["Name"])
 
-                if !p["Scene Camera Target Vector"].nil?
-                  x = p["Scene Camera X"]
-                  y = p["Scene Camera Y"]
-                  z = p["Scene Camera Z"]
-                  eye = [x.m, y.m, z.m]
-                  target = JSON.parse(p["Scene Camera Target Vector"]) || [1,0,0]
-                  up = JSON.parse(p["Scene Camera Up Vector"]) || [0,0,1]
-                  puts eye
-                  puts target
-                  puts up
+              if !p["Scene Camera Target Vector"].nil?
+                x = p["Scene Camera X"]
+                y = p["Scene Camera Y"]
+                z = p["Scene Camera Z"]
+                eye = [x.m, y.m, z.m]
+                target = JSON.parse(p["Scene Camera Target Vector"]) || [1,0,0]
+                up = JSON.parse(p["Scene Camera Up Vector"]) || [0,0,1]
 
-                  page.use_camera = false
-                  page.camera.set(eye, target, up)
-                  page.update(1)
-                  page.use_camera = true
-                end
+                page.use_camera = false
+                page.camera.set(eye, target, up)
+                page.update(1)
+                page.use_camera = true
+              end
             end
         end
 
@@ -104,27 +118,41 @@ module FinishVisionVR
             panos = u.panos
 
             model = Sketchup.active_model
+            pano_pages = []
+
+            # Switch to "Entry" page since there should always be an entry
+            entry_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Entry")
+            model.pages.selected_page = entry_page unless entry_page.nil?
+
             # Turn off scene transition times
             model.options["PageOptions"]["TransitionTime"] = 0
-            model.pages.each do |p|
-                name = p.name.strip
-                pano = panos.find { |pa| pa["Name"] == name }
-                next if pano.nil?
 
-                eye = p.camera.eye
-                target = p.camera.target
-                up = p.camera.up
-                x = eye[0].to_m
-                y = eye[1].to_m
-                z = eye[2].to_m
+            fp_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Floor Plan")
+            pano_pages << fp_page unless fp_page.nil?
 
-                pano["Scene Camera X"] = x
-                pano["Scene Camera Y"] = y
-                pano["Scene Camera Z"] = z
-                pano["Scene Camera Target Vector"] = target.to_a.to_s
-                pano["Scene Camera Up Vector"] = up.to_a.to_s
-                pano.save
+            panos.each do |pano|
+              p = FinishVisionVR::RenderingPlugin.get_page_for_pano(pano["Name"])
+              next if p.nil?
+
+              pano_pages << p
+              eye = p.camera.eye
+              target = p.camera.target
+              up = p.camera.up
+              x = eye[0].to_m
+              y = eye[1].to_m
+              z = eye[2].to_m
+
+              pano["Scene Camera X"] = x
+              pano["Scene Camera Y"] = y
+              pano["Scene Camera Z"] = z
+              pano["Scene Camera Target Vector"] = target.to_a.to_s
+              pano["Scene Camera Up Vector"] = up.to_a.to_s
+              pano.save
             end
+
+            # Remove pages that we don't want to render
+            pages_to_remove = model.pages.select { |p| !pano_pages.include?(p) }
+            pages_to_remove.each { |r| model.pages.erase r }
         end
 
         def self.set_floor_plan_geolocation
