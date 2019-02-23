@@ -47,7 +47,20 @@ module FinishVisionVR
     module RenderingPlugin
         # Try not to use spaces
         PANO_NAME_LOOKUP = {
-          "living room" => ["living room", "living"]
+          "living room" => ["living room", "living"],
+          "bed 1" => ["bed1", "bed 1", "bedroom1", "bedroom 1"],
+          "bed 2" => ["bed2", "bed 2", "bedroom2", "bedroom 2"],
+          "bed 3" => ["bed3", "bed 3", "bedroom3", "bedroom 3"],
+          "bed 4" => ["bed4", "bed 4", "bedroom4", "bedroom 4"],
+          "bath 1" => ["bath1", "bath 1", "bathroom1", "bathroom 1"],
+          "bath 2" => ["bath2", "bath 2", "bathroom2", "bathroom 2"],
+          "bath 3" => ["bath3", "bath 3", "bathroom3", "bathroom 3"],
+          "bath 4" => ["bath4", "bath 4", "bathroom4", "bathroom 4"],
+          "closet 1" => ["closet1", "closet 1"],
+          "closet 2" => ["closet2", "closet 2"],
+          "closet 3" => ["closet3", "closet 3"],
+          "closet 4" => ["closet4", "closet 4"],
+          "half bath" => ["half bath", "half", "half bathroom"],
         }
 
         # The name of the file should give us the record ID for the unit
