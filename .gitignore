@@ -2,3 +2,4 @@ user.env
 secrets.rb
 .sem
 *.zip
+.env
