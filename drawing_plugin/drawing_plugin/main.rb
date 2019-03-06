@@ -33,7 +33,7 @@ module FinishVisionVR
 
         def self.open_component_search
             dialog = UI::HtmlDialog.new(
-                width: 300,
+                width: 900,
                 height: 600,
             )
             dialog.set_url COMPONENT_SEARCH_URL
