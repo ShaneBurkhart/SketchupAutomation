@@ -410,7 +410,10 @@ async def main():
     finish_uploader_task  = asyncio.create_task(finish_uploader())
     #await save_unit_version("recNEgNBsRfG73J7B", TEST_PANO_FILES)
     #await renderer_task
-    await asyncio.wait([finish_uploader_task, renderer_task], return_when=asyncio.FIRST_COMPLETED)
+    done, pending = await asyncio.wait([finish_uploader_task, renderer_task], return_when=asyncio.FIRST_COMPLETED)
+
+    # Wait a few seconds for the error to print.
+    await asyncio.sleep(5)
 
     # Something went wrong.  Wait so we can see the output.
     input("Press Enter to exit...")
