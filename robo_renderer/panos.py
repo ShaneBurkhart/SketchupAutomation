@@ -94,7 +94,7 @@ def remove_all_pano_files():
     for basename in files:
         path = os.path.join(ENSCAPE_PANO_DIR, basename)
         os.remove(path)
-    
+
 def parse_unit_id(filename):
     parts = filename.split("-")
     return parts[0].strip()
@@ -121,7 +121,7 @@ async def render(unit_file):
 
     unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
     unit_version_id = parse_unit_id(unit_file)
-    
+
     AIRTABLE_LOCK.acquire()
     unit_version = unit_versions_airtable.get(unit_version_id)
     unit_id = unit_version["fields"]["Unit ID"][0]
@@ -141,7 +141,7 @@ async def render(unit_file):
         type_keys(window, "{ENTER}")
     except:
         pass
-    
+
     await asyncio.sleep(START_SKETCHUP_DELAY-60)
     print("Started...")
 
@@ -189,7 +189,7 @@ async def render(unit_file):
         # Turn off live updates while switching scenes to avoid crashing...
         type_keys(window, LIVE_UPDATES_KEY)
         await asyncio.sleep(1)
-        
+
         type_keys(window, NEXT_PAGE_KEY)
         await asyncio.sleep(8)
 
@@ -199,7 +199,7 @@ async def render(unit_file):
 
         type_keys(window, SET_PANO_GEOLOCATION_KEY)
         await asyncio.sleep(3)
-        
+
         # Toggle sync views to get camera in correct spot.
         type_keys(window, SYNC_CAMERA_KEY)
         await asyncio.sleep(1)
@@ -215,11 +215,11 @@ async def render(unit_file):
         file = os.path.join(ENSCAPE_PANO_DIR, "panorama_%i.xml" % pano_num)
         RENDER_PANO_LOCK.release()
         print(file)
-        
+
         tree = ET.parse(file)
         root = tree.getroot()
         camera = root.find("Camera")
-        
+
         if first_camera == None:
             first_camera = [camera.find("x").text, camera.find("y").text, camera.find("z").text]
         else:
@@ -247,13 +247,13 @@ async def render(unit_file):
 async def save_unit_version(unit_version_id, pano_files, floor_plan_path):
     unit_version = unit_versions_airtable.get(unit_version_id)
     unit_id = unit_version["fields"]["Unit ID"][0]
-    
+
     print(pano_files)
 
     AIRTABLE_LOCK.acquire()
     airtable_panos = get_panos_for_unit(unit_id)
     AIRTABLE_LOCK.release()
-    
+
     i = 0
     for file in pano_files:
         i += 1
@@ -290,10 +290,10 @@ async def save_unit_version(unit_version_id, pano_files, floor_plan_path):
                 filename = fields["Project Name"][0] + " - " + fields["Unit Name"][0] + " - " + fields["Name"] + ".png"
                 file_path = os.path.join(PANO_OUTPUT_DIR, filename)
                 key = PANO_KEY_PREFIX + str(uuid.uuid4()) + ".png"
-                
+
                 with open(file_path, "wb") as fh:
                     fh.write(base64.b64decode(img_data))
-                    
+
                 S3.upload_file(file_path, BUCKET_NAME, key, ExtraArgs={
                     'ACL': 'public-read',
                     'ContentDisposition': "attachment; filename=%s;" % filename,
@@ -318,7 +318,7 @@ async def save_unit_version(unit_version_id, pano_files, floor_plan_path):
 
     fp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + fp_key
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Floor Plan Image URL": fp_url })
-                                           
+
 
 async def renderer():
     print("Starting robot renderer")
@@ -336,9 +336,9 @@ async def renderer():
             print("Starting thread for %s" % unit_file)
             task = asyncio.create_task(render(unit_file))
             await task
-                                       
+
             #tasks.append(asyncio.create_task(render(unit_file)))
-            
+
             #if len(tasks) >= MAX_TASKS:
                 #done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
                 #tasks = list(pending)
@@ -347,7 +347,7 @@ async def renderer():
 
 async def server():
     print("Starting server")
-    
+
     while True:
         to_render = unit_versions_airtable.get_all(view="To Render")
 
@@ -355,20 +355,20 @@ async def server():
             fields = v["fields"]
             unit_version_id = v["id"]
             sketchup_file_url = fields["Sketchup File"]
-            filename = "%s - %s - %s.skp" % (unit_version_id, fields["Unit Name"][0], fields["Project Name"][0]) 
+            filename = "%s - %s - %s.skp" % (unit_version_id, fields["Unit Name"][0], fields["Project Name"][0])
 
             if filename in os.listdir(TO_RENDER_DIR):
                 print("Already downloaded: %s" % filename)
                 continue
 
-            print("Downloading: %s" % filename) 
+            print("Downloading: %s" % filename)
             urllib.request.urlretrieve(sketchup_file_url, os.path.join(TO_RENDER_DIR, filename))
 
         await asyncio.sleep(WAIT_DELAY)
 
 async def finish_uploader():
     print("Starting finish uploader")
-    
+
     while True:
         finish_files = os.listdir(FINISH_UPLOAD_DIR)
         tasks = []
@@ -379,11 +379,11 @@ async def finish_uploader():
             finish_file_path = os.path.join(FINISH_UPLOAD_DIR, finish_file)
             print(finish_file)
             print(finish_id)
-            
+
             if ".skp" not in finish_file:
                 os.remove(finish_file_path)
                 continue
-            
+
             f_key = FINISH_SKP_KEY_PREFIX + str(uuid.uuid4()) + ".skp"
             S3.upload_file(finish_file_path, BUCKET_NAME, f_key, ExtraArgs={ 'ACL':'public-read' })
 
@@ -411,5 +411,8 @@ async def main():
     #await save_unit_version("recNEgNBsRfG73J7B", TEST_PANO_FILES)
     #await renderer_task
     await asyncio.wait([finish_uploader_task, renderer_task], return_when=asyncio.FIRST_COMPLETED)
-    
+
+    # Something went wrong.  Wait so we can see the output.
+    input("Press Enter to exit...")
+
 asyncio.run(main())
