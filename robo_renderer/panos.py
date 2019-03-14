@@ -120,7 +120,7 @@ async def render(unit_file):
     remove_all_pano_files()
 
     unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
-    unit_version_id = parse_unit_id(unit_file)
+    unit_id = parse_unit_id(unit_file)
 
     AIRTABLE_LOCK.acquire()
     unit_version = unit_versions_airtable.get(unit_version_id)
@@ -242,12 +242,11 @@ async def render(unit_file):
     # Remove unit file now that we are done with it
     os.remove(unit_file_path)
 
-    await save_unit_version(unit_version_id, pano_files, floor_plan_path)
+    await save_unit_version(unit_id, pano_files, floor_plan_path)
 
-async def save_unit_version(unit_version_id, pano_files, floor_plan_path):
-    unit_version = unit_versions_airtable.get(unit_version_id)
-    unit_id = unit_version["fields"]["Unit ID"][0]
-
+async def save_unit_version(unit_id, pano_files, floor_plan_path):
+    unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
+    unit_version_id = unit_version["id"]
     print(pano_files)
 
     AIRTABLE_LOCK.acquire()
