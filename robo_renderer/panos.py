@@ -124,8 +124,6 @@ async def render(unit_file):
     unit_id = parse_unit_id(unit_file)
 
     AIRTABLE_LOCK.acquire()
-    unit_version = unit_versions_airtable.get(unit_version_id)
-    unit_id = unit_version["fields"]["Unit ID"][0]
     airtable_unit = get_unit(unit_id)
     AIRTABLE_LOCK.release()
 
