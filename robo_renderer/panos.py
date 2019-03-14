@@ -31,12 +31,12 @@ PANO_KEY_PREFIX = "panos/"
 FLOOR_PLAN_KEY_PREFIX = "floor-plans/"
 FINISH_SKP_KEY_PREFIX = "finish-skp/"
 
-FINISH_UPLOAD_DIR = "E:\\Google Drive\\Startups\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\FINISH UPLOAD"
-TO_RENDER_DIR = "E:\\Google Drive\\Startups\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\TO RENDER"
+FINISH_UPLOAD_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\FINISH UPLOAD"
+TO_RENDER_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\TO RENDER"
 FP_OUTPUT_DIR = "C:\\Users\\shane\\Documents\\FinishVisionVR\\Rendered Floor Plans"
 PANO_OUTPUT_DIR = "C:\\Users\\shane\\Documents\\FinishVisionVR\\Rendered Panos"
 ENSCAPE_PANO_DIR = "C:\\Users\\shane\\Documents\\Enscape\\Panoramas"
-SKETCHUP_EXE = "C:\\Program Files\\SketchUp\\SketchUp 2018\\SketchUp.exe"
+SKETCHUP_EXE = "C:\\Program Files\\SketchUp\\SketchUp 2019\\SketchUp.exe"
 
 UPDATE_CAMERA_LOCATIONS_KEY = "+{F2}"
 TAKE_SCREENSHOT_KEY = "+{F11}"
@@ -53,7 +53,7 @@ NEXT_PAGE_KEY = "{PGUP}"
 CAMERA_POSITION_THRESHOLD = 0.0001
 
 WAIT_DELAY = 60
-START_SKETCHUP_DELAY = 420
+START_SKETCHUP_DELAY = 120
 
 AIRTABLE_LOCK = threading.RLock()
 ENSCAPE_LOCK = threading.RLock()
@@ -145,7 +145,7 @@ async def render(unit_file):
     await asyncio.sleep(START_SKETCHUP_DELAY-60)
     print("Started...")
 
-    window = app.window(title_re="%s - SketchUp Pro 2018" % unit_file)
+    window = app.window(title_re="%s - SketchUp Pro 2019" % unit_file)
     WINDOW_LOCK.release()
 
     ENSCAPE_LOCK.acquire()
@@ -155,10 +155,10 @@ async def render(unit_file):
     ENSCAPE_LOCK.release()
 
     # Take Floor Plan image
-    type_keys(window, SET_FLOOR_PLAN_GEOLOCATION_KEY)
-    await asyncio.sleep(3)
     type_keys(window, SET_FLOOR_PLAN_CAMERA_KEY)
     await asyncio.sleep(8)
+    type_keys(window, SET_FLOOR_PLAN_GEOLOCATION_KEY)
+    await asyncio.sleep(3)
 
     # Assuming we are turning on sync
     type_keys(window, SYNC_CAMERA_KEY)
@@ -193,17 +193,17 @@ async def render(unit_file):
         type_keys(window, NEXT_PAGE_KEY)
         await asyncio.sleep(8)
 
-        # Turn on live updates again.
-        type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(3)
-
-        type_keys(window, SET_PANO_GEOLOCATION_KEY)
-        await asyncio.sleep(3)
-
         # Toggle sync views to get camera in correct spot.
         type_keys(window, SYNC_CAMERA_KEY)
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
         type_keys(window, SYNC_CAMERA_KEY)
+
+        type_keys(window, SET_PANO_GEOLOCATION_KEY)
+        await asyncio.sleep(5)
+
+        # Turn on live updates again.
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(5)
 
         RENDER_PANO_LOCK.acquire()
         # Render!
