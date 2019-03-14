@@ -63,6 +63,8 @@ module FinishVisionVR
           "half bath" => ["half bath", "half", "half bathroom"],
         }
 
+        CAMERA_TARGET_RADIUS = 1000
+
         # The name of the file should give us the record ID for the unit
         def self.get_unit_version_id
             model = Sketchup.active_model
@@ -91,36 +93,69 @@ module FinishVisionVR
         end
 
         def self.create_pano_scenes
-            unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
-            u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
-            return UI.messagebox("Unit not found...") if u.nil?
-            model = Sketchup.active_model
-            panos = u.panos
+          unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
+          u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
+          return UI.messagebox("Unit not found...") if u.nil?
+          model = Sketchup.active_model
+          panos = u.panos
 
-            # Switch to "Ceiling" scene so the ceiling is on.
-            ceiling_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Ceiling")
-            model.pages.selected_page = ceiling_page unless ceiling_page.nil?
+          # Switch to "Ceiling" scene so the ceiling is on.
+          ceiling_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Ceiling")
+          model.pages.selected_page = ceiling_page unless ceiling_page.nil?
 
-            panos.each do |p|
-              exists = FinishVisionVR::RenderingPlugin.get_page_for_pano(p["Name"])
-              next unless exists.nil?
+          panos.each do |p|
+            exists = FinishVisionVR::RenderingPlugin.get_page_for_pano(p["Name"])
+            next unless exists.nil?
 
-              page = model.pages.add(p["Name"])
+            page = model.pages.add(p["Name"])
 
-              if !p["Scene Camera Target Vector"].nil?
-                x = p["Scene Camera X"]
-                y = p["Scene Camera Y"]
-                z = p["Scene Camera Z"]
-                eye = [x.m, y.m, z.m]
-                target = JSON.parse(p["Scene Camera Target Vector"]) || [1,0,0]
-                up = JSON.parse(p["Scene Camera Up Vector"]) || [0,0,1]
+            if !p["Scene Camera Target Vector"].nil?
+              x = p["Scene Camera X"]
+              y = p["Scene Camera Y"]
+              z = p["Scene Camera Z"]
+              eye = [x.m, y.m, z.m]
+              target = JSON.parse(p["Scene Camera Target Vector"]) || [1,0,0]
+              up = [0,0,1]
 
-                page.use_camera = false
-                page.camera.set(eye, target, up)
-                page.update(1)
-                page.use_camera = true
-              end
+              page.use_camera = false
+              page.camera.set(eye, target, up)
+              page.update(1)
+              page.use_camera = true
             end
+          end
+        end
+
+        def self.create_pano_scenes_with_direction
+          unit_id = FinishVisionVR::RenderingPlugin.get_unit_id
+          u = FinishVisionVR::RenderingPlugin::Unit.find(unit_id)
+          return UI.messagebox("Unit not found...") if u.nil?
+          model = Sketchup.active_model
+          panos = u.panos
+
+          # Switch to "Ceiling" scene so the ceiling is on.
+          ceiling_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Ceiling")
+          model.pages.selected_page = ceiling_page unless ceiling_page.nil?
+
+          panos.each do |p|
+            page = FinishVisionVR::RenderingPlugin.get_page_for_pano(p["Name"])
+            page = model.pages.add(p["Name"]) if page.nil?
+
+            x = p["Scene Camera X"]
+            y = p["Scene Camera Y"]
+            z = p["Scene Camera Z"]
+            eye = [x.m, y.m, z.m]
+            angle = p["Scene Camera Angle"]
+            angle = 0 if angle.nil?
+            target_x = Math.cos(angle * Math::PI / 180) * CAMERA_TARGET_RADIUS
+            target_y = Math.sin(angle * Math::PI / 180) * CAMERA_TARGET_RADIUS
+            target = [target_x, target_y, z.m]
+            up = [0,0,1]
+
+            page.use_camera = false
+            page.camera.set(eye, target, up)
+            page.update(1)
+            page.use_camera = true
+          end
         end
 
         # Goes through each view and updates the camera locations in Airtables
@@ -159,7 +194,6 @@ module FinishVisionVR
               pano["Scene Camera Y"] = y
               pano["Scene Camera Z"] = z
               pano["Scene Camera Target Vector"] = target.to_a.to_s
-              pano["Scene Camera Up Vector"] = up.to_a.to_s
               pano.save
             end
 
@@ -211,7 +245,9 @@ module FinishVisionVR
                 end
             end
 
-            model.pages.selected_page = floor_plan_page || exterior_plan_page
+            UI.start_timer(1) {
+              model.pages.selected_page = floor_plan_page || exterior_plan_page
+            }
 
             walls = []
             Sketchup.active_model.entities.each do |e|
@@ -256,9 +292,11 @@ module FinishVisionVR
             my_camera = Sketchup::Camera.new eye, target, up
             my_camera.fov = fov
 
-            # Get a handle to the current view and change its camera.
-            view = Sketchup.active_model.active_view
-            view.camera = my_camera
+            UI.start_timer(4) {
+              # Get a handle to the current view and change its camera.
+              view = Sketchup.active_model.active_view
+              view.camera = my_camera
+            }
         end
 
         def self.init_ui
@@ -278,6 +316,9 @@ module FinishVisionVR
             }
             finish_vision_menu.add_item("Create Pano Scenes") {
                 FinishVisionVR::RenderingPlugin.create_pano_scenes
+            }
+            finish_vision_menu.add_item("Create Pano Scenes w/ Direction") {
+                FinishVisionVR::RenderingPlugin.create_pano_scenes_with_direction
             }
         end
 
