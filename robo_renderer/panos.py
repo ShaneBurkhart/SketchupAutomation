@@ -30,6 +30,7 @@ BUCKET_NAME = "finish-vision-vr"
 PANO_KEY_PREFIX = "panos/"
 FLOOR_PLAN_KEY_PREFIX = "floor-plans/"
 FINISH_SKP_KEY_PREFIX = "finish-skp/"
+UNIT_SKP_KEY_PREFIX = "unit-skp/"
 
 FINISH_UPLOAD_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\FINISH UPLOAD"
 TO_RENDER_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\TO RENDER"
@@ -240,11 +241,12 @@ async def render(unit_file):
     await asyncio.sleep(5)
 
     # Remove unit file now that we are done with it
+
+    await save_unit_version(unit_id, pano_files, unit_file_path, floor_plan_path)
+
     os.remove(unit_file_path)
 
-    await save_unit_version(unit_id, pano_files, floor_plan_path)
-
-async def save_unit_version(unit_id, pano_files, floor_plan_path):
+async def save_unit_version(unit_id, pano_files, unit_file_path, floor_plan_path):
     unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
     unit_version_id = unit_version["id"]
     print(pano_files)
@@ -317,6 +319,17 @@ async def save_unit_version(unit_id, pano_files, floor_plan_path):
 
     fp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + fp_key
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Floor Plan Image URL": fp_url })
+
+    print("Uploading SKP file... This will take a while...")
+    skp_key = UNIT_SKP_KEY_PREFIX + str(uuid.uuid4()) + ".skp"
+    S3.upload_file(unit_file_path, BUCKET_NAME, skp_key, ExtraArgs={
+        'ACL':'public-read',
+        'ContentDisposition': "attachment;",
+    })
+
+    skp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + skp_key
+    unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "SKP File URL": skp_url })
+    print("Done!")
 
 
 async def renderer():
