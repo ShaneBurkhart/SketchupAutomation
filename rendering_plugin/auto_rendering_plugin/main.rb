@@ -66,18 +66,12 @@ module FinishVisionVR
         CAMERA_TARGET_RADIUS = 1000
 
         # The name of the file should give us the record ID for the unit
-        def self.get_unit_version_id
+        def self.get_unit_id
             model = Sketchup.active_model
             title = model.title || ""
             title_parts = title.split("-")
             return nil if title_parts.length == 0
             return title_parts[0].strip
-        end
-
-        def self.get_unit_id
-            unit_version_id = FinishVisionVR::RenderingPlugin.get_unit_version_id
-            uv = FinishVisionVR::RenderingPlugin::UnitVersion.find(unit_version_id)
-            return uv["Unit ID"][0]
         end
 
         def self.get_page_for_pano(name)
