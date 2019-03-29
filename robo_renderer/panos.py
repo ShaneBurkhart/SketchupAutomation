@@ -122,6 +122,10 @@ async def render(unit_file):
 
     unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
     unit_id = parse_unit_id(unit_file)
+    unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
+    unit_version_id = unit_version["id"]
+
+    await save_unit_file(unit_version, unit_file_path)
 
     AIRTABLE_LOCK.acquire()
     airtable_unit = get_unit(unit_id)
@@ -240,13 +244,26 @@ async def render(unit_file):
 
     # Remove unit file now that we are done with it
 
-    await save_unit_version(unit_id, pano_files, unit_file_path, floor_plan_path)
+    await save_unit_version(unit_version, pano_files, unit_file_path, floor_plan_path)
 
     os.remove(unit_file_path)
 
-async def save_unit_version(unit_id, pano_files, unit_file_path, floor_plan_path):
-    unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
+async def save_unit_file(unit_version, unit_file_path):
     unit_version_id = unit_version["id"]
+
+    print("Uploading SKP file... This will take a while...")
+    skp_key = UNIT_SKP_KEY_PREFIX + str(uuid.uuid4()) + ".skp"
+    S3.upload_file(unit_file_path, BUCKET_NAME, skp_key, ExtraArgs={
+        'ACL':'public-read',
+        'ContentDisposition': "attachment;",
+    })
+
+    skp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + skp_key
+    unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "SKP File URL": skp_url })
+
+async def save_unit_version(unit_version, pano_files, unit_file_path, floor_plan_path):
+    unit_version_id = unit_version["id"]
+    unit_id = unit_version["Unit"][0]
     print(pano_files)
 
     AIRTABLE_LOCK.acquire()
@@ -317,16 +334,6 @@ async def save_unit_version(unit_id, pano_files, unit_file_path, floor_plan_path
 
     fp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + fp_key
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Floor Plan Image URL": fp_url })
-
-    print("Uploading SKP file... This will take a while...")
-    skp_key = UNIT_SKP_KEY_PREFIX + str(uuid.uuid4()) + ".skp"
-    S3.upload_file(unit_file_path, BUCKET_NAME, skp_key, ExtraArgs={
-        'ACL':'public-read',
-        'ContentDisposition': "attachment;",
-    })
-
-    skp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + skp_key
-    unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "SKP File URL": skp_url })
     print("Done!")
 
 
