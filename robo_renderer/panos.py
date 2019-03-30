@@ -12,6 +12,7 @@ import urllib.request
 import boto3
 import uuid
 import dotenv
+import subprocess
 
 dotenv.load_dotenv()
 
@@ -32,8 +33,9 @@ FLOOR_PLAN_KEY_PREFIX = "floor-plans/"
 FINISH_SKP_KEY_PREFIX = "finish-skp/"
 UNIT_SKP_KEY_PREFIX = "unit-skp/"
 
-FINISH_UPLOAD_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\FINISH UPLOAD"
-TO_RENDER_DIR = "D:\\Google Drive\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\TO RENDER"
+FINISH_UPLOAD_DIR = "E:\\Google Drive\\Startups\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\FINISH UPLOAD"
+TO_RENDER_DIR = "E:\\Google Drive\\Startups\\NewDev\\10000 Construction VR\\MAGIC FOLDERS\\TO RENDER"
+TMP_SKP_DIR = "E:\\TMP_SKPs"
 FP_OUTPUT_DIR = "C:\\Users\\shane\\Documents\\FinishVisionVR\\Rendered Floor Plans"
 PANO_OUTPUT_DIR = "C:\\Users\\shane\\Documents\\FinishVisionVR\\Rendered Panos"
 ENSCAPE_PANO_DIR = "C:\\Users\\shane\\Documents\\Enscape\\Panoramas"
@@ -113,19 +115,17 @@ def type_keys(window, key):
     WINDOW_LOCK.release()
 
 # ~20 mins per file
-async def render(unit_file):
-    print("Rendering: %s" % unit_file)
+async def render(unit_version, skp_file_path):
+    uv_fields = unit_version["fields"]
+    print("Rendering: %s" % uv_fields["Unit Name"][0])
     first_camera=None
     pano_files = []
 
     remove_all_pano_files()
 
-    unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
-    unit_id = parse_unit_id(unit_file)
-    unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
+    unit_file_path = skp_file_path
+    unit_id = uv_fields["Unit ID"][0]
     unit_version_id = unit_version["id"]
-
-    await save_unit_file(unit_version, unit_file_path)
 
     AIRTABLE_LOCK.acquire()
     airtable_unit = get_unit(unit_id)
@@ -244,7 +244,7 @@ async def render(unit_file):
 
     # Remove unit file now that we are done with it
 
-    await save_unit_version(unit_version, pano_files, unit_file_path, floor_plan_path)
+    await save_unit_version(unit_version, pano_files, floor_plan_path)
 
     os.remove(unit_file_path)
 
@@ -261,9 +261,17 @@ async def save_unit_file(unit_version, unit_file_path):
     skp_url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + skp_key
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "SKP File URL": skp_url })
 
-async def save_unit_version(unit_version, pano_files, unit_file_path, floor_plan_path):
+async def save_model_data(unit_version, unit_file_path):
     unit_version_id = unit_version["id"]
-    unit_id = unit_version["Unit"][0]
+
+    result = subprocess.run(["ModelDataScraper.exe", unit_file_path], stdout=subprocess.PIPE)
+    output = result.stdout.decode("utf-8")
+
+    unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Model Data Output": output })
+
+async def save_unit_version(unit_version, pano_files, floor_plan_path):
+    unit_version_id = unit_version["id"]
+    unit_id = unit_version["Unit ID"][0]
     print(pano_files)
 
     AIRTABLE_LOCK.acquire()
@@ -337,8 +345,8 @@ async def save_unit_version(unit_version, pano_files, unit_file_path, floor_plan
     print("Done!")
 
 
-async def renderer():
-    print("Starting robot renderer")
+async def tester():
+    print("Starting tester")
 
     while True:
         unit_files = os.listdir(TO_RENDER_DIR)
@@ -346,41 +354,52 @@ async def renderer():
         print(unit_files)
 
         for unit_file in unit_files:
+            unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
+            
             if "AutoSave" in unit_file or ".png" in unit_file or ".skp" not in unit_file:
-                os.remove(os.path.join(TO_RENDER_DIR, unit_file))
+                os.remove(unit_file_path)
                 continue
 
-            print("Starting thread for %s" % unit_file)
-            task = asyncio.create_task(render(unit_file))
-            await task
+            unit_id = parse_unit_id(unit_file)
+            unit_version = unit_versions_airtable.insert({ "Unit": [unit_id] })
+            unit_version_id = unit_version["id"]
 
-            #tasks.append(asyncio.create_task(render(unit_file)))
+            await save_unit_file(unit_version, unit_file_path)
+            await save_model_data(unit_version, unit_file_path)
 
-            #if len(tasks) >= MAX_TASKS:
-                #done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                #tasks = list(pending)
+            os.remove(unit_file_path)
 
         await asyncio.sleep(WAIT_DELAY)
 
-async def server():
-    print("Starting server")
+async def download_unit_version_file(sketchup_file_url, tmp_filepath):
+    urllib.request.urlretrieve(sketchup_file_url, tmp_filepath)
+    await asyncio.sleep(5)
+
+async def renderer():
+    print("Starting robot renderer")
+
+    try:  
+        os.mkdir(TMP_SKP_DIR)
+    except OSError:  
+        print ("Creation of the directory %s failed" % TMP_SKP_DIR)
+    else:  
+        print ("Successfully created the directory %s " % TMP_SKP_DIR)
 
     while True:
-        to_render = unit_versions_airtable.get_all(view="To Render")
+        unit_versions_to_render = unit_versions_airtable.get_all(view="To Render")
+        print(unit_versions_to_render)
 
-        for v in to_render:
-            fields = v["fields"]
-            unit_version_id = v["id"]
-            sketchup_file_url = fields["Sketchup File"]
-            filename = "%s - %s - %s.skp" % (unit_version_id, fields["Unit Name"][0], fields["Project Name"][0])
+        for unit_version in unit_versions_to_render:
+            fields = unit_version["fields"]
+            unit_version_id = unit_version["id"]
+            sketchup_file_url = fields["SKP File URL"]
+            filename = os.path.basename(sketchup_file_url)
+            tmp_file_path = os.path.join(TMP_SKP_DIR, filename)
 
-            if filename in os.listdir(TO_RENDER_DIR):
-                print("Already downloaded: %s" % filename)
-                continue
-
-            print("Downloading: %s" % filename)
-            urllib.request.urlretrieve(sketchup_file_url, os.path.join(TO_RENDER_DIR, filename))
-
+            print("Downloading: %s" % sketchup_file_url)
+            await download_unit_version_file(sketchup_file_url, tmp_file_path)
+            await render(unit_version, tmp_file_path)
+            
         await asyncio.sleep(WAIT_DELAY)
 
 async def finish_uploader():
@@ -423,11 +442,12 @@ TEST_PANO_FILES = [
 
 async def main():
     #server_task = asyncio.create_task(server())
+    tester_task = asyncio.create_task(tester())
     renderer_task = asyncio.create_task(renderer())
     finish_uploader_task  = asyncio.create_task(finish_uploader())
     #await save_unit_version("recNEgNBsRfG73J7B", TEST_PANO_FILES)
     #await renderer_task
-    done, pending = await asyncio.wait([finish_uploader_task, renderer_task], return_when=asyncio.FIRST_COMPLETED)
+    done, pending = await asyncio.wait([finish_uploader_task, renderer_task, tester_task], return_when=asyncio.FIRST_COMPLETED)
 
 async def error_handler():
     await main()
