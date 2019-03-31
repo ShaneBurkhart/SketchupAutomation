@@ -264,7 +264,7 @@ async def save_unit_file(unit_version, unit_file_path):
 async def save_model_data(unit_version, unit_file_path):
     unit_version_id = unit_version["id"]
 
-    result = subprocess.run(["C:\\Users\\shane\\Workspace\\SketchupAutomation\\robo_renderer\\ModelDataScraper.exe", unit_file_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, capture_output=True)
+    result = subprocess.run(["C:\\Users\\shane\\Workspace\\SketchupAutomation\\robo_renderer\\ModelDataScraper.exe", unit_file_path], stdout=subprocess.PIPE)
     output = result.stdout.decode("utf-8")
 
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Model Data Output": output })
