@@ -148,7 +148,7 @@ async def render(unit_version, skp_file_path):
     await asyncio.sleep(START_SKETCHUP_DELAY-60)
     print("Started...")
 
-    window = app.window(title_re="%s - SketchUp Pro 2019" % unit_file)
+    window = app.window(title_re=".+ - SketchUp Pro 2019")
     WINDOW_LOCK.release()
 
     ENSCAPE_LOCK.acquire()
@@ -271,7 +271,7 @@ async def save_model_data(unit_version, unit_file_path):
 
 async def save_unit_version(unit_version, pano_files, floor_plan_path):
     unit_version_id = unit_version["id"]
-    unit_id = unit_version["Unit ID"][0]
+    unit_id = unit_version["fields"]["Unit ID"][0]
     print(pano_files)
 
     AIRTABLE_LOCK.acquire()
