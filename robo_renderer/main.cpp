@@ -18,14 +18,14 @@ int main(int argc, char *argv[]) {
   // Always initialize the API before using it
   SUInitialize();
 
-  if (argc < 2) {
-    std::cout << "No file specified..." << std::endl;
-    return 1;
-  }
+  //if (argc < 2) {
+  //  std::cout << "No file specified..." << std::endl;
+  //  return 1;
+  //}
 
  // Default for testing.
-  //char filename[] = "rec7Hlgays53TsbWE - A1.skp";
-  char *filename = argv[1];
+  char filename[] = "E:\\Google Drive\\Startups\\NewDev\\10000 Construction VR\\Warrenville\\Sketchup Files\\190321\\rec9mqQJnwlH7oGHa- C1 - Warrenville.skp";
+  //char *filename = argv[1];
 
   //std::cout << "Loading file... " << filename << std::endl;
 
@@ -40,77 +40,91 @@ int main(int argc, char *argv[]) {
 	  return 1;
   }
 
-  size_t layerCount = 0;
-  SU_CALL(SUModelGetNumLayers(model, &layerCount));
-  std::vector<SULayerRef> layers(layerCount);
-  SU_CALL(SUModelGetLayers(model, layerCount, &layers[0], &layerCount));
-
-  std::cout << "Model Layers:" << std::endl;
-  for (size_t i = 0; i < layerCount; i++) {
-	  SUStringRef n = SU_INVALID;
-	  size_t n_length = 0;
-	  bool isVisible = false;
-	  SU_CALL(SUStringCreate(&n));
-	  SU_CALL(SULayerGetName(layers[i], &n));
-	  SU_CALL(SUStringGetUTF8Length(n, &n_length));
-	  char* n_utf8 = new char[n_length + 1];
-	  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
-	  SU_CALL(SULayerGetVisibility(layers[i], &isVisible));
-
-	  // Now we have the name in a form we can use
-	  std::cout << n_utf8 << ": " << isVisible << std::endl;
-
-	  SUStringRelease(&n);
-	  delete[]n_utf8;
-  }
-
-  std::cout << std::endl;
-
-  size_t sceneCount = 0;
-  SU_CALL(SUModelGetNumScenes(model, &sceneCount));
-  std::vector<SUSceneRef> scenes(sceneCount);
-  SU_CALL(SUModelGetScenes(model, sceneCount, &scenes[0], &sceneCount));
-
-  std::cout << "Scenes:" << std::endl;
-  for (size_t i = 0; i < sceneCount; i++) {
-	  SUStringRef n = SU_INVALID;
-	  size_t n_length = 0;
-	  SU_CALL(SUStringCreate(&n));
-	  SU_CALL(SUSceneGetName(scenes[i], &n));
-	  SU_CALL(SUStringGetUTF8Length(n, &n_length));
-	  char* n_utf8 = new char[n_length + 1];
-	  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
-
-	  // Now we have the name in a form we can use
-	  std::cout << "Scene: " << n_utf8 << std::endl;
-
-	  SUStringRelease(&n);
-	  delete[]n_utf8;
-
+  try {
 	  size_t layerCount = 0;
-	  SU_CALL(SUSceneGetNumLayers(scenes[i], &layerCount));
-	  std::vector<SULayerRef> layers(layerCount);
-	  SU_CALL(SUSceneGetLayers(scenes[i], layerCount, &layers[0], &layerCount));
+	  SU_CALL(SUModelGetNumLayers(model, &layerCount));
 
-	  std::cout << "Scene Layers:" << std::endl;
-	  for (size_t i = 0; i < layerCount; i++) {
-		  SUStringRef n = SU_INVALID;
-		  size_t n_length = 0;
-		  bool isVisible = false;
-		  SU_CALL(SUStringCreate(&n));
-		  SU_CALL(SULayerGetName(layers[i], &n));
-		  SU_CALL(SUStringGetUTF8Length(n, &n_length));
-		  char* n_utf8 = new char[n_length + 1];
-		  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
-		  SU_CALL(SULayerGetVisibility(layers[i], &isVisible));
+	  if (layerCount > 0) {
+		  std::vector<SULayerRef> layers(layerCount);
+		  SU_CALL(SUModelGetLayers(model, layerCount, &layers[0], &layerCount));
 
-		  // Now we have the name in a form we can use
-		  std::cout << n_utf8 << ": " << isVisible << std::endl;
+		  std::cout << "Model Layers:" << std::endl;
+		  for (size_t i = 0; i < layerCount; i++) {
+			  SUStringRef n = SU_INVALID;
+			  size_t n_length = 0;
+			  bool isVisible = false;
+			  SU_CALL(SUStringCreate(&n));
+			  SU_CALL(SULayerGetName(layers[i], &n));
+			  SU_CALL(SUStringGetUTF8Length(n, &n_length));
+			  char* n_utf8 = new char[n_length + 1];
+			  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
+			  SU_CALL(SULayerGetVisibility(layers[i], &isVisible));
 
-		  SUStringRelease(&n);
-		  delete[]n_utf8;
+			  // Now we have the name in a form we can use
+			  std::cout << n_utf8 << ": " << isVisible << std::endl;
+
+			  SUStringRelease(&n);
+			  delete[]n_utf8;
+		  }
+
+		  std::cout << std::endl;
 	  }
-	  std::cout << std::endl;
+
+	  size_t sceneCount = 0;
+	  SU_CALL(SUModelGetNumScenes(model, &sceneCount));
+
+	  if (sceneCount > 0) {
+		  std::vector<SUSceneRef> scenes(sceneCount);
+		  SU_CALL(SUModelGetScenes(model, sceneCount, &scenes[0], &sceneCount));
+
+		  std::cout << "Scenes:" << std::endl;
+		  std::cout << sceneCount << std::endl;
+		  for (size_t i = 0; i < sceneCount; i++) {
+			  SUStringRef n = SU_INVALID;
+			  size_t n_length = 0;
+			  SU_CALL(SUStringCreate(&n));
+			  SU_CALL(SUSceneGetName(scenes[i], &n));
+			  SU_CALL(SUStringGetUTF8Length(n, &n_length));
+			  char* n_utf8 = new char[n_length + 1];
+			  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
+
+			  // Now we have the name in a form we can use
+			  std::cout << "Scene: " << n_utf8 << std::endl;
+
+			  SUStringRelease(&n);
+			  delete[]n_utf8;
+
+			  size_t layerCount = 0;
+			  SU_CALL(SUSceneGetNumLayers(scenes[i], &layerCount));
+			  
+			  if (layerCount <= 0) continue;
+			  std::vector<SULayerRef> layers(layerCount);
+			  SU_CALL(SUSceneGetLayers(scenes[i], layerCount, &layers[0], &layerCount));
+
+			  std::cout << "Scene Layers:" << std::endl;
+			  for (size_t i = 0; i < layerCount; i++) {
+				  SUStringRef n = SU_INVALID;
+				  size_t n_length = 0;
+				  bool isVisible = false;
+				  SU_CALL(SUStringCreate(&n));
+				  SU_CALL(SULayerGetName(layers[i], &n));
+				  SU_CALL(SUStringGetUTF8Length(n, &n_length));
+				  char* n_utf8 = new char[n_length + 1];
+				  SUStringGetUTF8(n, n_length + 1, n_utf8, &n_length);
+				  SU_CALL(SULayerGetVisibility(layers[i], &isVisible));
+
+				  // Now we have the name in a form we can use
+				  std::cout << n_utf8 << ": " << isVisible << std::endl;
+
+				  SUStringRelease(&n);
+				  delete[]n_utf8;
+			  }
+			  std::cout << std::endl;
+		  }
+	  }
+  } catch (std::exception &e) {
+	  std::cout << "There was an exception..." << std::endl;
+	  std::cout << e.what() << std::endl;
   }
 
   // Must release the model or there will be memory leaks
