@@ -264,7 +264,7 @@ async def save_unit_file(unit_version, unit_file_path):
 async def save_model_data(unit_version, unit_file_path):
     unit_version_id = unit_version["id"]
 
-    result = subprocess.run(["C:\\Users\\shane\\Workspace\\SketchupAutomation\\robo_renderer\\ModelDataScraper.exe", unit_file_path], stdout=subprocess.PIPE)
+    result = subprocess.run(["C:\\Users\\shane\\Workspace\\SketchupAutomation\\robo_renderer\\ModelDataScraper.exe", unit_file_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, capture_output=True)
     output = result.stdout.decode("utf-8")
 
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Model Data Output": output })
@@ -355,7 +355,7 @@ async def tester():
 
         for unit_file in unit_files:
             unit_file_path = os.path.join(TO_RENDER_DIR, unit_file)
-            
+
             if "AutoSave" in unit_file or ".png" in unit_file or ".skp" not in unit_file:
                 os.remove(unit_file_path)
                 continue
@@ -378,11 +378,11 @@ async def download_unit_version_file(sketchup_file_url, tmp_filepath):
 async def renderer():
     print("Starting robot renderer")
 
-    try:  
+    try:
         os.mkdir(TMP_SKP_DIR)
-    except OSError:  
+    except OSError:
         print ("Creation of the directory %s failed" % TMP_SKP_DIR)
-    else:  
+    else:
         print ("Successfully created the directory %s " % TMP_SKP_DIR)
 
     while True:
@@ -399,7 +399,7 @@ async def renderer():
             print("Downloading: %s" % sketchup_file_url)
             await download_unit_version_file(sketchup_file_url, tmp_file_path)
             await render(unit_version, tmp_file_path)
-            
+
         await asyncio.sleep(WAIT_DELAY)
 
 async def finish_uploader():
