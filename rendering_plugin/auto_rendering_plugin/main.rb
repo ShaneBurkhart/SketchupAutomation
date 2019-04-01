@@ -293,6 +293,22 @@ module FinishVisionVR
             }
         end
 
+        def self.move_to_enscape_view
+          model = Sketchup.active_model
+
+          # Turn off scene transition times
+          model.pages.each { |p| p.transition_time = 0 }
+          model.options["PageOptions"]["TransitionTime"] = 0
+
+          page = model.pages.find { |p| p.name == "Enscape View" }
+          model.pages.selected_page = page unless page.nil?
+        end
+
+        def self.delete_current_scene
+          model = Sketchup.active_model
+          model.pages.erase(model.pages.selected_page)
+        end
+
         def self.init_ui
             tools_menu = UI.menu("Tools")
             finish_vision_menu = tools_menu.add_submenu("FinishVisionVR")
@@ -307,6 +323,12 @@ module FinishVisionVR
             }
             finish_vision_menu.add_item("Update Camera Locations") {
                 FinishVisionVR::RenderingPlugin.update_camera_locations
+            }
+            finish_vision_menu.add_item("Move to Enscape View") {
+                FinishVisionVR::RenderingPlugin.move_to_enscape_view
+            }
+            finish_vision_menu.add_item("Delete Current Scene") {
+                FinishVisionVR::RenderingPlugin.delete_current_scene
             }
             finish_vision_menu.add_item("Create Pano Scenes") {
                 FinishVisionVR::RenderingPlugin.create_pano_scenes
