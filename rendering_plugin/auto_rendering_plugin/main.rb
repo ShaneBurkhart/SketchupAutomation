@@ -300,7 +300,7 @@ module FinishVisionVR
           model.pages.each { |p| p.transition_time = 0 }
           model.options["PageOptions"]["TransitionTime"] = 0
 
-          page = model.pages.find { |p| p.name == "Enscape View" }
+          page = model.pages.find { |p| p.name.include? "Enscape View" }
           model.pages.selected_page = page unless page.nil?
         end
 
