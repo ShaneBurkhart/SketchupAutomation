@@ -460,7 +460,8 @@ async def renderer():
             tmp_file_path = os.path.join(TMP_SKP_DIR, filename)
 
             print("Downloading: %s" % sketchup_file_url)
-            await download_unit_version_file(sketchup_file_url, tmp_file_path)
+            if !os.path.isfile(tmp_file_path):
+                await download_unit_version_file(sketchup_file_url, tmp_file_path)
             await render(unit_version, tmp_file_path)
 
         await asyncio.sleep(WAIT_DELAY)
