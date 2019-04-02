@@ -23,12 +23,14 @@ panos_airtable = airtable.Airtable("appTAmLzyXUW1RxaH", "Panos", api_key="keyg0W
 units_airtable = airtable.Airtable("appTAmLzyXUW1RxaH", "Units", api_key="keyg0WJMB3XPaM6J7")
 unit_versions_airtable = airtable.Airtable("appTAmLzyXUW1RxaH", "Unit Versions", api_key="keyg0WJMB3XPaM6J7")
 pano_versions_airtable = airtable.Airtable("appTAmLzyXUW1RxaH", "Pano Versions", api_key="keyg0WJMB3XPaM6J7")
+screenshot_versions_airtable = airtable.Airtable("appTAmLzyXUW1RxaH", "Screenshot Versions", api_key="keyg0WJMB3XPaM6J7")
 finish_options_airtable = airtable.Airtable("app5xuA2wJKN1rkp0", "Finish Options", api_key="keyg0WJMB3XPaM6J7")
 
 S3_DOMAIN = "https://s3-us-west-2.amazonaws.com"
 S3 = boto3.client('s3', aws_access_key_id=os.getenv("ACCESS_KEY_ID"), aws_secret_access_key=os.getenv("SECRET_ACCESS_KEY"))
 BUCKET_NAME = "finish-vision-vr"
 PANO_KEY_PREFIX = "panos/"
+SCREENSHOT_KEY_PREFIX = "screenshots/"
 FLOOR_PLAN_KEY_PREFIX = "floor-plans/"
 FINISH_SKP_KEY_PREFIX = "finish-skp/"
 UNIT_SKP_KEY_PREFIX = "unit-skp/"
@@ -42,15 +44,17 @@ ENSCAPE_PANO_DIR = "C:\\Users\\shane\\Documents\\Enscape\\Panoramas"
 SKETCHUP_EXE = "C:\\Program Files\\SketchUp\\SketchUp 2019\\SketchUp.exe"
 
 UPDATE_CAMERA_LOCATIONS_KEY = "+{F2}"
-TAKE_SCREENSHOT_KEY = "+{F11}"
-TAKE_MONO_PANO_KEY = "+{F10}"
-SYNC_CAMERA_KEY = "+{F5}"
-LIVE_UPDATES_KEY = "+{F7}"
 SET_PANO_GEOLOCATION_KEY = "+{F3}"
 SET_FLOOR_PLAN_GEOLOCATION_KEY = "+{F4}"
+SYNC_CAMERA_KEY = "+{F5}"
 SET_FLOOR_PLAN_CAMERA_KEY = "+{F6}"
+LIVE_UPDATES_KEY = "+{F7}"
 START_ENSCAPE_KEY = "+{F8}"
+TAKE_SCREENSHOT_KEY = "+{F11}"
+TAKE_MONO_PANO_KEY = "+{F10}"
 NEXT_PAGE_KEY = "{PGUP}"
+MOVE_TO_ENSCAPE_VIEW_KEY = "+{F9}"
+DELETE_CURRENT_SCENE_KEY = "+{F12}"
 
 # In meters
 CAMERA_POSITION_THRESHOLD = 0.0001
@@ -67,7 +71,7 @@ RENDER_IMAGE_LOCK = threading.RLock()
 # Multithreading not really working atm
 MAX_TASKS = 1
 
-def get_latest_floor_plan_file():
+def get_latest_screenshot_file():
     files = os.listdir(FP_OUTPUT_DIR)
     paths = [os.path.join(FP_OUTPUT_DIR, basename) for basename in files]
     return max(paths, key=os.path.getctime)
@@ -98,6 +102,12 @@ def remove_all_pano_files():
         path = os.path.join(ENSCAPE_PANO_DIR, basename)
         os.remove(path)
 
+def remove_all_screenshot_files():
+    files = os.listdir(FP_OUTPUT_DIR)
+    for basename in files:
+        path = os.path.join(FP_OUTPUT_DIR, basename)
+        os.remove(path)
+
 def parse_unit_id(filename):
     parts = filename.split("-")
     return parts[0].strip()
@@ -120,6 +130,7 @@ async def render(unit_version, skp_file_path):
     print("Rendering: %s" % uv_fields["Unit Name"][0])
     first_camera=None
     pano_files = []
+    screenshot_files = []
 
     remove_all_pano_files()
 
@@ -157,6 +168,41 @@ async def render(unit_version, skp_file_path):
     await asyncio.sleep(120)
     ENSCAPE_LOCK.release()
 
+    remove_all_screenshot_files()
+
+    # Take screenshots
+    screenshot_count = uv_fields["Screenshot Count"]
+    for i in range(screenshot_count):
+        # Turn off live updates while switching scenes to avoid crashing...
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(1)
+
+        type_keys(window, MOVE_TO_ENSCAPE_VIEW_KEY)
+        await asyncio.sleep(8)
+
+        # Toggle sync views to get camera in correct spot.
+        type_keys(window, SYNC_CAMERA_KEY)
+        await asyncio.sleep(3)
+        type_keys(window, SYNC_CAMERA_KEY)
+        await asyncio.sleep(3)
+
+        # Turn on live updates again.
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(5)
+
+        # Render Image
+        RENDER_IMAGE_LOCK.acquire()
+        type_keys(window, TAKE_SCREENSHOT_KEY)
+        await asyncio.sleep(30)
+
+        # Capture screenshot file path
+        screenshot_file_path = get_latest_screenshot_file()
+        screenshot_files.append(screenshot_file_path)
+        RENDER_IMAGE_LOCK.release()
+
+        type_keys(window, DELETE_CURRENT_SCENE_KEY)
+        await asyncio.sleep(8)
+
     # Take Floor Plan image
     type_keys(window, SET_FLOOR_PLAN_CAMERA_KEY)
     await asyncio.sleep(8)
@@ -179,7 +225,7 @@ async def render(unit_version, skp_file_path):
     if os.path.isfile(floor_plan_path):
         print("Removing previous floor plan: " + floor_plan_path)
         os.remove(floor_plan_path)
-    os.rename(get_latest_floor_plan_file(), floor_plan_path)
+    os.rename(get_latest_screenshot_file(), floor_plan_path)
     RENDER_IMAGE_LOCK.release()
 
     # Turn off sync
@@ -244,7 +290,7 @@ async def render(unit_version, skp_file_path):
 
     # Remove unit file now that we are done with it
 
-    await save_unit_version(unit_version, pano_files, floor_plan_path)
+    await save_unit_version(unit_version, pano_files, screenshot_files, floor_plan_path)
 
     os.remove(unit_file_path)
 
@@ -269,7 +315,7 @@ async def save_model_data(unit_version, unit_file_path):
 
     unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Model Data Output": output })
 
-async def save_unit_version(unit_version, pano_files, floor_plan_path):
+async def save_unit_version(unit_version, pano_files, screenshot_files, floor_plan_path):
     unit_version_id = unit_version["id"]
     unit_id = unit_version["fields"]["Unit ID"][0]
     print(pano_files)
@@ -277,6 +323,23 @@ async def save_unit_version(unit_version, pano_files, floor_plan_path):
     AIRTABLE_LOCK.acquire()
     airtable_panos = get_panos_for_unit(unit_id)
     AIRTABLE_LOCK.release()
+
+    for file_path in screenshot_files:
+        key = SCREENSHOT_KEY_PREFIX + str(uuid.uuid4()) + ".png"
+
+        S3.upload_file(file_path, BUCKET_NAME, key, ExtraArgs={
+            'ACL': 'public-read',
+            'ContentDisposition': "attachment;",
+            "ContentType": "image/png"
+        })
+
+        url = S3_DOMAIN + "/" + BUCKET_NAME + "/" + key
+
+        screenshot_versions_airtable.insert({
+            "Unit Version": [unit_version_id],
+            "Image URL": url,
+        })
+
 
     i = 0
     for file in pano_files:
