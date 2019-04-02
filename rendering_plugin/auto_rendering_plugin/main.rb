@@ -306,7 +306,10 @@ module FinishVisionVR
 
         def self.delete_current_scene
           model = Sketchup.active_model
-          model.pages.erase(model.pages.selected_page)
+          page = model.pages.selected_page
+          # Move to the first page before deleting
+          model.pages.selected_page = model.pages.first
+          model.pages.erase(page)
         end
 
         def self.init_ui
