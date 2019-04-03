@@ -178,11 +178,7 @@ async def render(unit_version, skp_file_path):
     # Use scene count to figure sleep
     screenshot_count = uv_fields["Screenshot Count"]
     # Take batch screenshots
-    type_keys(window, MANAGE_SCENES_KEY)
-    await asyncio.sleep(3)
-    type_keys(window, TAB_KEY)
-    await asyncio.sleep(3)
-    type_keys(window, ENTER_KEY)
+    type_keys(window, "%s%s%s" % [MANAGE_SCENES_KEY, TAB_KEY, ENTER_KEY])
     # Wait 30 seconds for each screenshot
     await asyncio.sleep(30 * screenshot_count)
 
