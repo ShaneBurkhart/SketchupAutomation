@@ -50,11 +50,12 @@ SYNC_CAMERA_KEY = "+{F5}"
 SET_FLOOR_PLAN_CAMERA_KEY = "+{F6}"
 LIVE_UPDATES_KEY = "+{F7}"
 START_ENSCAPE_KEY = "+{F8}"
-TAKE_SCREENSHOT_KEY = "+{F11}"
 TAKE_MONO_PANO_KEY = "+{F10}"
+TAKE_SCREENSHOT_KEY = "+{F11}"
+MANAGE_SCENES_KEY = "+{F12}"
 NEXT_PAGE_KEY = "{PGUP}"
-MOVE_TO_ENSCAPE_VIEW_KEY = "+{F9}"
-DELETE_CURRENT_SCENE_KEY = "+{F12}"
+TAB_KEY = "{TAB}"
+ENTER_KEY = "{ENTER}"
 
 # In meters
 CAMERA_POSITION_THRESHOLD = 0.0001
@@ -96,6 +97,11 @@ def get_all_pano_files():
     paths = [os.path.join(ENSCAPE_PANO_DIR, basename) for basename in files]
     return paths
 
+def get_all_screenshot_files():
+    files = os.listdir(FP_OUTPUT_DIR)
+    paths = [os.path.join(FP_OUTPUT_DIR, basename) for basename in files]
+    return paths
+
 def remove_all_pano_files():
     files = os.listdir(ENSCAPE_PANO_DIR)
     for basename in files:
@@ -130,7 +136,6 @@ async def render(unit_version, skp_file_path):
     print("Rendering: %s" % uv_fields["Unit Name"][0])
     first_camera=None
     pano_files = []
-    screenshot_files = []
 
     remove_all_pano_files()
 
@@ -152,7 +157,7 @@ async def render(unit_version, skp_file_path):
     try:
         # Try to press enter if there is read only warning
         window = app.top_window()
-        type_keys(window, "{ENTER}")
+        type_keys(window, ENTER_KEY)
     except:
         pass
 
@@ -170,48 +175,28 @@ async def render(unit_version, skp_file_path):
 
     remove_all_screenshot_files()
 
-    # Take screenshots
+    # Use scene count to figure sleep
     screenshot_count = uv_fields["Screenshot Count"]
-    for i in range(screenshot_count):
-        # Turn off live updates while switching scenes to avoid crashing...
-        type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(1)
+    # Take batch screenshots
+    type_keys(window, MANAGE_SCENES_KEY)
+    await asyncio.sleep(3)
+    type_keys(window, TAB_KEY)
+    await asyncio.sleep(3)
+    type_keys(window, ENTER_KEY)
+    # Wait 30 seconds for each screenshot
+    await asyncio.sleep(30 * screenshot_count)
 
-        type_keys(window, MOVE_TO_ENSCAPE_VIEW_KEY)
-        await asyncio.sleep(8)
-
-        # Toggle sync views to get camera in correct spot.
-        type_keys(window, SYNC_CAMERA_KEY)
-        await asyncio.sleep(3)
-        type_keys(window, SYNC_CAMERA_KEY)
-        await asyncio.sleep(3)
-
-        # Turn on live updates again.
-        type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(5)
-
-        # Render Image
-        RENDER_IMAGE_LOCK.acquire()
-        type_keys(window, TAKE_SCREENSHOT_KEY)
-        await asyncio.sleep(30)
-
-        # Capture screenshot file path
-        screenshot_file_path = get_latest_screenshot_file()
-        screenshot_files.append(screenshot_file_path)
-        RENDER_IMAGE_LOCK.release()
-
-        type_keys(window, DELETE_CURRENT_SCENE_KEY)
-        await asyncio.sleep(8)
+    screenshot_files = get_all_screenshot_files()
 
     # Take Floor Plan image
     type_keys(window, SET_FLOOR_PLAN_CAMERA_KEY)
     await asyncio.sleep(8)
     type_keys(window, SET_FLOOR_PLAN_GEOLOCATION_KEY)
-    await asyncio.sleep(3)
+    await asyncio.sleep(8)
 
     # Assuming we are turning on sync
     type_keys(window, SYNC_CAMERA_KEY)
-    await asyncio.sleep(2)
+    await asyncio.sleep(8)
 
     # Render Image
     RENDER_IMAGE_LOCK.acquire()
