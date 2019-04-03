@@ -61,7 +61,7 @@ ENTER_KEY = "{ENTER}"
 CAMERA_POSITION_THRESHOLD = 0.0001
 
 WAIT_DELAY = 60
-START_SKETCHUP_DELAY = 120
+START_SKETCHUP_DELAY = 30
 
 AIRTABLE_LOCK = threading.RLock()
 ENSCAPE_LOCK = threading.RLock()
@@ -153,7 +153,7 @@ async def render(unit_version, skp_file_path):
     #app = pywinauto.Application().connect(path=SKETCHUP_EXE)
     command = SKETCHUP_EXE + " \"" + unit_file_path + "\""
     app = pywinauto.Application().start(command)
-    await asyncio.sleep(60)
+    await asyncio.sleep(30)
     try:
         # Try to press enter if there is read only warning
         window = app.top_window()
@@ -161,7 +161,7 @@ async def render(unit_version, skp_file_path):
     except:
         pass
 
-    await asyncio.sleep(START_SKETCHUP_DELAY-60)
+    await asyncio.sleep(START_SKETCHUP_DELAY-30)
     print("Started...")
 
     window = app.window(title_re=".+ - SketchUp Pro 2019")
@@ -170,7 +170,7 @@ async def render(unit_version, skp_file_path):
     ENSCAPE_LOCK.acquire()
     print("Starting Enscape")
     type_keys(window, START_ENSCAPE_KEY)
-    await asyncio.sleep(120)
+    await asyncio.sleep(60)
     ENSCAPE_LOCK.release()
 
     remove_all_screenshot_files()
@@ -178,17 +178,76 @@ async def render(unit_version, skp_file_path):
     # Use scene count to figure sleep
     screenshot_count = uv_fields["Screenshot Count"]
     # Take batch screenshots
-    type_keys(window, "%s%s%s" % [MANAGE_SCENES_KEY, TAB_KEY, ENTER_KEY])
+    type_keys(window, "{}{}{}".format(MANAGE_SCENES_KEY, TAB_KEY, ENTER_KEY))
     # Wait 30 seconds for each screenshot
     await asyncio.sleep(30 * screenshot_count)
 
     screenshot_files = get_all_screenshot_files()
 
+    # Restart SketchUp to make it through without crashing...
+    WINDOW_LOCK.acquire()
+    app.kill()
+    WINDOW_LOCK.release()
+
+    await asyncio.sleep(8)
+
+    WINDOW_LOCK.acquire()
+    #For testing
+    #app = pywinauto.Application().connect(path=SKETCHUP_EXE)
+    command = SKETCHUP_EXE + " \"" + unit_file_path + "\""
+    app = pywinauto.Application().start(command)
+    await asyncio.sleep(30)
+    try:
+        # Try to press enter if there is read only warning
+        window = app.top_window()
+        type_keys(window, ENTER_KEY)
+    except:
+        pass
+
+    await asyncio.sleep(START_SKETCHUP_DELAY-30)
+    print("Started...")
+
+    window = app.window(title_re=".+ - SketchUp Pro 2019")
+    WINDOW_LOCK.release()
+
+    ENSCAPE_LOCK.acquire()
+    print("Starting Enscape")
+    type_keys(window, START_ENSCAPE_KEY)
+    await asyncio.sleep(60)
+    ENSCAPE_LOCK.release()
+    
+    # Remove all Enscape Views now that we have rendered them
+    type_keys(window, UPDATE_CAMERA_LOCATIONS_KEY)
+    await asyncio.sleep(5)
+
+    # Turn off live updates while switching scenes to avoid crashing...
+    type_keys(window, LIVE_UPDATES_KEY)
+    await asyncio.sleep(1)
+
     # Take Floor Plan image
     type_keys(window, SET_FLOOR_PLAN_CAMERA_KEY)
+    await asyncio.sleep(15)
+    
+    # Sync camera before enabling live updates to hopefully decrease load.
+    type_keys(window, SYNC_CAMERA_KEY)
     await asyncio.sleep(8)
+    # Back off
+    type_keys(window, SYNC_CAMERA_KEY)
+    await asyncio.sleep(8)
+    
+    # Turn on live updates again.  To refresh in increments.
+    type_keys(window, LIVE_UPDATES_KEY)
+    await asyncio.sleep(5)
+
+    # Turn off live updates while switching scenes to avoid crashing...
+    type_keys(window, LIVE_UPDATES_KEY)
+    await asyncio.sleep(1)
     type_keys(window, SET_FLOOR_PLAN_GEOLOCATION_KEY)
     await asyncio.sleep(8)
+    
+    # Turn on live updates again.
+    type_keys(window, LIVE_UPDATES_KEY)
+    await asyncio.sleep(5)
 
     # Assuming we are turning on sync
     type_keys(window, SYNC_CAMERA_KEY)
@@ -211,9 +270,6 @@ async def render(unit_version, skp_file_path):
 
     # Turn off sync
     type_keys(window, SYNC_CAMERA_KEY)
-
-    type_keys(window, UPDATE_CAMERA_LOCATIONS_KEY)
-    await asyncio.sleep(5)
 
     while True:
         # Turn off live updates while switching scenes to avoid crashing...
@@ -436,8 +492,9 @@ async def renderer():
         for unit_version in unit_versions_to_render:
             fields = unit_version["fields"]
             unit_version_id = unit_version["id"]
+            unit_id = fields["Unit ID"][0]
             sketchup_file_url = fields["SKP File URL"]
-            filename = os.path.basename(sketchup_file_url)
+            filename = "{} - {}".format(unit_id, os.path.basename(sketchup_file_url))
             tmp_file_path = os.path.join(TMP_SKP_DIR, filename)
 
             print("Downloading: %s" % sketchup_file_url)
