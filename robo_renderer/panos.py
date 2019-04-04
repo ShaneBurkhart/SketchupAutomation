@@ -52,7 +52,7 @@ LIVE_UPDATES_KEY = "+{F7}"
 START_ENSCAPE_KEY = "+{F8}"
 TAKE_MONO_PANO_KEY = "+{F10}"
 TAKE_SCREENSHOT_KEY = "+{F11}"
-MANAGE_SCENES_KEY = "+{F12}"
+SETUP_SCREENSHOT_RENDERING_KEY = "+{F12}"
 NEXT_PAGE_KEY = "{PGUP}"
 TAB_KEY = "{TAB}"
 ENTER_KEY = "{ENTER}"
@@ -177,10 +177,32 @@ async def render(unit_version, skp_file_path):
 
     # Use scene count to figure sleep
     screenshot_count = uv_fields["Screenshot Count"]
-    # Take batch screenshots
-    type_keys(window, "{}{}{}".format(MANAGE_SCENES_KEY, TAB_KEY, ENTER_KEY))
-    # Wait 30 seconds for each screenshot
-    await asyncio.sleep(30 * screenshot_count)
+    type_keys(window, SETUP_SCREENSHOT_RENDERING_KEY)
+    await asyncio.sleep(8)
+
+    for i in range(screenshot_count):
+        # Turn off live updates while switching scenes to avoid crashing...
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(1)
+
+        type_keys(window, NEXT_PAGE_KEY)
+        await asyncio.sleep(8)
+
+        # Sync camera before enabling live updates to hopefully decrease load.
+        type_keys(window, SYNC_CAMERA_KEY)
+        await asyncio.sleep(8)
+        # Back off
+        type_keys(window, SYNC_CAMERA_KEY)
+        await asyncio.sleep(8)
+
+        # Turn on live updates again.  To refresh in increments.
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(5)
+
+        # Render Image
+        RENDER_IMAGE_LOCK.acquire()
+        type_keys(window, TAKE_SCREENSHOT_KEY)
+        await asyncio.sleep(30)
 
     screenshot_files = get_all_screenshot_files()
 
@@ -215,7 +237,7 @@ async def render(unit_version, skp_file_path):
     type_keys(window, START_ENSCAPE_KEY)
     await asyncio.sleep(60)
     ENSCAPE_LOCK.release()
-    
+
     # Remove all Enscape Views now that we have rendered them
     type_keys(window, UPDATE_CAMERA_LOCATIONS_KEY)
     await asyncio.sleep(5)
@@ -227,14 +249,14 @@ async def render(unit_version, skp_file_path):
     # Take Floor Plan image
     type_keys(window, SET_FLOOR_PLAN_CAMERA_KEY)
     await asyncio.sleep(15)
-    
+
     # Sync camera before enabling live updates to hopefully decrease load.
     type_keys(window, SYNC_CAMERA_KEY)
     await asyncio.sleep(8)
     # Back off
     type_keys(window, SYNC_CAMERA_KEY)
     await asyncio.sleep(8)
-    
+
     # Turn on live updates again.  To refresh in increments.
     type_keys(window, LIVE_UPDATES_KEY)
     await asyncio.sleep(5)
@@ -244,7 +266,7 @@ async def render(unit_version, skp_file_path):
     await asyncio.sleep(1)
     type_keys(window, SET_FLOOR_PLAN_GEOLOCATION_KEY)
     await asyncio.sleep(8)
-    
+
     # Turn on live updates again.
     type_keys(window, LIVE_UPDATES_KEY)
     await asyncio.sleep(5)
