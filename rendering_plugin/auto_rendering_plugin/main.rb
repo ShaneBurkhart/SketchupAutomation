@@ -304,12 +304,14 @@ module FinishVisionVR
           model.pages.selected_page = page unless page.nil?
         end
 
-        def self.delete_current_scene
+        def self.setup_screenshot_rendering
           model = Sketchup.active_model
-          page = model.pages.selected_page
-          # Move to the first page before deleting
-          model.pages.selected_page = model.pages.first
-          model.pages.erase(page)
+          non_screenshot_pages = model.pages.select{ |p| !p.name.include? "Enscape View" }
+          screenshot_page = model.pages.find { |p| p.name.include? "Enscape View" }
+
+          # Switch to an Enscape View and remove non screenshot views
+          model.pages.selected_page = screenshot_page
+          non_screenshot_pages.each { |s| model.pages.erase(s) }
         end
 
         def self.init_ui
@@ -327,11 +329,8 @@ module FinishVisionVR
             finish_vision_menu.add_item("Update Camera Locations") {
                 FinishVisionVR::RenderingPlugin.update_camera_locations
             }
-            finish_vision_menu.add_item("Move to Enscape View") {
-                FinishVisionVR::RenderingPlugin.move_to_enscape_view
-            }
-            finish_vision_menu.add_item("Delete Current Scene") {
-                FinishVisionVR::RenderingPlugin.delete_current_scene
+            finish_vision_menu.add_item("Setup Screenshot Rendering") {
+                FinishVisionVR::RenderingPlugin.setup_screenshot_rendering
             }
             finish_vision_menu.add_item("Create Pano Scenes") {
                 FinishVisionVR::RenderingPlugin.create_pano_scenes
