@@ -61,7 +61,7 @@ ENTER_KEY = "{ENTER}"
 CAMERA_POSITION_THRESHOLD = 0.0001
 
 WAIT_DELAY = 60
-START_SKETCHUP_DELAY = 30
+START_SKETCHUP_DELAY = 90
 
 AIRTABLE_LOCK = threading.RLock()
 ENSCAPE_LOCK = threading.RLock()
@@ -127,7 +127,23 @@ def get_unit(unit_id):
 def type_keys(window, key):
     WINDOW_LOCK.acquire()
     print(key)
-    window.type_keys(key)
+
+    for i in range(3):
+        print("Try {}".format(i+1))
+        
+        try:
+            window.type_keys(key)
+            # Break if we make it.
+            break
+        except Exception as e:
+            print("Exception, trying again...")
+            
+            if i == 2:
+                print("Tried 3 times... Throwing exception...")
+                raise e
+
+            time.sleep(15)
+
     WINDOW_LOCK.release()
 
 # ~20 mins per file
@@ -165,13 +181,17 @@ async def render(unit_version, skp_file_path):
     print("Started...")
 
     window = app.window(title_re=".+ - SketchUp Pro 2019")
+    window.move_window(x=None, y=None, width=1920, height=1080, repaint=True)
     WINDOW_LOCK.release()
 
     ENSCAPE_LOCK.acquire()
     print("Starting Enscape")
     type_keys(window, START_ENSCAPE_KEY)
-    await asyncio.sleep(60)
+    await asyncio.sleep(90)
     ENSCAPE_LOCK.release()
+
+    enscape_window = app.window(title_re=".*Enscape.*")
+    enscape_window.move_window(x=None, y=None, width=1920, height=1080, repaint=True)
 
     remove_all_screenshot_files()
 
@@ -183,7 +203,7 @@ async def render(unit_version, skp_file_path):
     for i in range(screenshot_count):
         # Turn off live updates while switching scenes to avoid crashing...
         type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(1)
+        await asyncio.sleep(8)
 
         type_keys(window, NEXT_PAGE_KEY)
         await asyncio.sleep(8)
@@ -197,12 +217,11 @@ async def render(unit_version, skp_file_path):
 
         # Turn on live updates again.  To refresh in increments.
         type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(5)
+        await asyncio.sleep(15)
 
         # Render Image
-        RENDER_IMAGE_LOCK.acquire()
         type_keys(window, TAKE_SCREENSHOT_KEY)
-        await asyncio.sleep(30)
+        await asyncio.sleep(45)
 
     screenshot_files = get_all_screenshot_files()
 
@@ -306,12 +325,20 @@ async def render(unit_version, skp_file_path):
         await asyncio.sleep(3)
         type_keys(window, SYNC_CAMERA_KEY)
 
+        # Turn on live updates again.  To refresh in increments.
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(10)
+
+        # Turn off live updates while switching scenes to avoid crashing...
+        type_keys(window, LIVE_UPDATES_KEY)
+        await asyncio.sleep(1)
+    
         type_keys(window, SET_PANO_GEOLOCATION_KEY)
         await asyncio.sleep(5)
 
         # Turn on live updates again.
         type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(5)
+        await asyncio.sleep(10)
 
         RENDER_PANO_LOCK.acquire()
         # Render!
