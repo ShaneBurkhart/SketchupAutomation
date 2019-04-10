@@ -130,14 +130,14 @@ def type_keys(window, key):
 
     for i in range(3):
         print("Try {}".format(i+1))
-        
+
         try:
             window.type_keys(key)
             # Break if we make it.
             break
         except Exception as e:
             print("Exception, trying again...")
-            
+
             if i == 2:
                 print("Tried 3 times... Throwing exception...")
                 raise e
@@ -332,7 +332,7 @@ async def render(unit_version, skp_file_path):
         # Turn off live updates while switching scenes to avoid crashing...
         type_keys(window, LIVE_UPDATES_KEY)
         await asyncio.sleep(1)
-    
+
         type_keys(window, SET_PANO_GEOLOCATION_KEY)
         await asyncio.sleep(5)
 
@@ -549,7 +549,10 @@ async def renderer():
             print("Downloading: %s" % sketchup_file_url)
             if not os.path.isfile(tmp_file_path):
                 await download_unit_version_file(sketchup_file_url, tmp_file_path)
+
+            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Started At": datetime.datetime.now() })
             await render(unit_version, tmp_file_path)
+            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Finished At": datetime.datetime.now() })
 
         await asyncio.sleep(WAIT_DELAY)
 
