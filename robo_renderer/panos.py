@@ -550,9 +550,9 @@ async def renderer():
             if not os.path.isfile(tmp_file_path):
                 await download_unit_version_file(sketchup_file_url, tmp_file_path)
 
-            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Started At": datetime.datetime.now() })
+            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Started At": datetime.datetime.now().isoformat() })
             await render(unit_version, tmp_file_path)
-            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Finished At": datetime.datetime.now() })
+            unit_versions_airtable.update_by_field("Record ID", unit_version_id, { "Rendering Finished At": datetime.datetime.now().isoformat() })
 
         await asyncio.sleep(WAIT_DELAY)
 
