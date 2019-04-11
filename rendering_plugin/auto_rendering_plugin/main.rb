@@ -225,72 +225,66 @@ module FinishVisionVR
 
 
         def self.floor_plan_camera
-            model = Sketchup.active_model
-            floor_plan_page = nil
-            exterior_plan_page = nil
-            # Disable transition time
-            model.pages.each { |p| p.transition_time = 0 }
-            model.pages.each do |p|
-                if p.name == "Floor Plan"
-                    floor_plan_page = p
-                end
-                if p.name == "Exterior"
-                    exterior_plan_page = p
-                end
-            end
+          model = Sketchup.active_model
+           floor_plan_page = nil
+           exterior_plan_page = nil
+           # Disable transition time
+           model.pages.each { |p| p.transition_time = 0 }
+           model.pages.each do |p|
+               if p.name == "Floor Plan"
+                   floor_plan_page = p
+               end
+               if p.name == "Exterior"
+                   exterior_plan_page = p
+               end
+           end
 
-            UI.start_timer(1) {
-              model.pages.selected_page = floor_plan_page || exterior_plan_page
-            }
+           UI.start_timer(4) {
+             model.pages.selected_page = floor_plan_page || exterior_plan_page
+           }
 
-            walls = []
-            Sketchup.active_model.entities.each do |e|
-                # 72 = 7' Most walls are at least 7'
-                walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 72
-            end
+           walls = []
+           Sketchup.active_model.entities.each do |e|
+               # 72 = 7' Most walls are at least 7'
+               walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 72
+           end
 
-            # Create a virtual bounding box
-            bbox = Geom::BoundingBox.new
-            walls.each { |ent| bbox.add(ent.bounds) rescue nil }
-            # Get the bottom front left corner as a Geom::Point3d
-            origin = bbox.corner(0)
-            # Use Ruby's multiple assignment
-            x, y, z = origin.to_a
-            w = bbox.width
-            h = bbox.height
-            d = bbox.depth
+           # Create a virtual bounding box
+           bbox = Geom::BoundingBox.new
+           walls.each { |ent| bbox.add(ent.bounds) rescue nil }
+           # Get the bottom front left corner as a Geom::Point3d
+           origin = bbox.corner(0)
+           # Use Ruby's multiple assignment
+           x, y, z = origin.to_a
+           w = bbox.width
+           h = bbox.height
+           d = bbox.depth
 
-            # Enscape default FOV
-            fov = 42.0
-            width = w.to_f
-            height = h.to_f
-            aspect_ratio = width / height
-            target_width = width
+           # Enscape default FOV
+           fov = 70.0
+           width = w.to_f
+           height = h.to_f
+           target_width = height * 1.7777
 
-            # 16/9 = 1.777777
-            if aspect_ratio < 1.777777
-                target_width = height * 1.77777
-            end
+           # Add 120 for wall height
+           camera_height = target_width/(2*Math.tan(fov/2*Math::PI/180))+30+z
 
-            # Add 120 for wall height
-            camera_height = target_width/(2*Math.tan(fov/2*Math::PI/180))+120+z
+           center_x = x+width/2
+           center_y = y+height/2
+           eye_x = center_x
+           eye_y = center_y-50
 
-            center_x = x+width/2
-            center_y = y+height/2
-            eye_x = center_x
-            eye_y = center_y-200
+           eye = [eye_x,eye_y,camera_height]
+           target = [center_x,center_y,0]
+           up = [0,1,0]
+           my_camera = Sketchup::Camera.new eye, target, up
+           my_camera.fov = fov
 
-            eye = [eye_x,eye_y,camera_height]
-            target = [center_x,center_y,0]
-            up = [0,1,0]
-            my_camera = Sketchup::Camera.new eye, target, up
-            my_camera.fov = fov
-
-            UI.start_timer(4) {
-              # Get a handle to the current view and change its camera.
-              view = Sketchup.active_model.active_view
-              view.camera = my_camera
-            }
+           UI.start_timer(8) {
+             # Get a handle to the current view and change its camera.
+             view = Sketchup.active_model.active_view
+             view.camera = my_camera
+           }
         end
 
         def self.move_to_enscape_view

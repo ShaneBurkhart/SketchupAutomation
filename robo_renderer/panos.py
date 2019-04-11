@@ -290,10 +290,6 @@ async def render(unit_version, skp_file_path):
     type_keys(window, LIVE_UPDATES_KEY)
     await asyncio.sleep(5)
 
-    # Assuming we are turning on sync
-    type_keys(window, SYNC_CAMERA_KEY)
-    await asyncio.sleep(8)
-
     # Render Image
     RENDER_IMAGE_LOCK.acquire()
     type_keys(window, TAKE_SCREENSHOT_KEY)
