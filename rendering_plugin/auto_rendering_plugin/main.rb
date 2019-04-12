@@ -226,22 +226,15 @@ module FinishVisionVR
 
         def self.floor_plan_camera
           model = Sketchup.active_model
-           floor_plan_page = nil
-           exterior_plan_page = nil
            # Disable transition time
            model.pages.each { |p| p.transition_time = 0 }
-           model.pages.each do |p|
-               if p.name == "Floor Plan"
-                   floor_plan_page = p
-               end
-               if p.name == "Exterior"
-                   exterior_plan_page = p
-               end
-           end
+           floor_plan_page = model.pages.find { |p| p.name.include? "Floor Plan" }
 
-           UI.start_timer(4) {
-             model.pages.selected_page = floor_plan_page || exterior_plan_page
-           }
+           if !floor_plan_page.nil?
+             UI.start_timer(4) {
+               model.pages.selected_page = floor_plan_page
+             }
+           end
 
            walls = []
            Sketchup.active_model.entities.each do |e|
