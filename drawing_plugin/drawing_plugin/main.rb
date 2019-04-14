@@ -43,14 +43,7 @@ module FinishVisionVR
                     model = Sketchup.active_model
                     comp = FinishVisionVR::DrawingPlugin.load_component(url)
 
-                    case type
-                    when "Flooring"
-                      # It's only a material so we add to the model, set to current material and select paint bucket.
-                      material = model.materials.find { |m| m.name.start_with? "FV -" }
-                      Sketchup.active_model.materials.current = material unless material.nil?
-                    else
-                      FinishVisionVR::DrawingPlugin.place_component(comp)
-                    end
+                    FinishVisionVR::DrawingPlugin.place_component(comp)
                 }
             }
             dialog.show
