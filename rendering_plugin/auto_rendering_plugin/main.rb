@@ -306,7 +306,7 @@ module FinishVisionVR
             if result.nil?
               settings_codes = [DEFAULT_SETTINGS_CODE]
             else
-              settings_codes = result
+              settings_codes = result.to_a
             end
 
             next settings_codes.include?(@@current_settings_code)
