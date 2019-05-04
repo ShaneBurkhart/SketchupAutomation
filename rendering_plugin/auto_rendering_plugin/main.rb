@@ -65,11 +65,22 @@ module FinishVisionVR
 
         CAMERA_TARGET_RADIUS = 1000
         DEFAULT_SETTINGS_CODE = "FV000"
+        DEFAULT_PANO = "Entry"
 
         @@current_settings_code = DEFAULT_SETTINGS_CODE
+        @@current_pano_name = DEFAULT_PANO
 
         def self.set_settings_code(code)
           @@current_settings_code = code
+        end
+
+        def self.set_pano_name(name)
+          model = Sketchup.active_model
+          page = FinishVisionVR::RenderingPlugin.get_page_for_pano(name)
+          if !page.nil?
+            model.pages.selected_page = page
+            @@current_pano_name = name
+          end
         end
 
         # The name of the file should give us the record ID for the unit
