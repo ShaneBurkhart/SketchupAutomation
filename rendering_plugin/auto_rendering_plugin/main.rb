@@ -297,10 +297,9 @@ module FinishVisionVR
 
         def self.setup_screenshot_rendering
           model = Sketchup.active_model
-          screenshot_page = model.pages.find { |p| p.name.include? "Enscape View" }
           non_screenshot_pages = model.pages.select do |p|
             # Only pages named Enscape View are screenshots
-            next false unless p.name.include?("Enscape View")
+            next true if !p.name.include?("Enscape View")
 
             result = /[fF][vV]\d{3}/.match(p.name)
             if result.nil?
@@ -309,11 +308,12 @@ module FinishVisionVR
               settings_codes = result.to_a
             end
 
-            next settings_codes.include?(@@current_settings_code)
+            next !settings_codes.include?(@@current_settings_code)
           end
 
           # Switch to an Enscape View and remove non screenshot views
-          model.pages.selected_page = screenshot_page
+          screenshot_view = model.pages.find { |p| !non_screenshot_pages.include?(p.name) }
+          model.pages.selected_page = screenshot_view unless screenshot_view.nil?
           non_screenshot_pages.each { |s| model.pages.erase(s) }
         end
 
