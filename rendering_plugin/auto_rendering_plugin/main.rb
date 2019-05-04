@@ -64,6 +64,13 @@ module FinishVisionVR
         }
 
         CAMERA_TARGET_RADIUS = 1000
+        DEFAULT_SETTINGS_CODE = "FV000"
+
+        @@current_settings_code = DEFAULT_SETTINGS_CODE
+
+        def self.set_settings_code(code)
+          @@current_settings_code = code
+        end
 
         # The name of the file should give us the record ID for the unit
         def self.get_unit_id
@@ -168,9 +175,6 @@ module FinishVisionVR
 
             # Turn off scene transition times
             model.options["PageOptions"]["TransitionTime"] = 0
-
-            fp_page = FinishVisionVR::RenderingPlugin.get_page_for_pano("Floor Plan")
-            pano_pages << fp_page unless fp_page.nil?
 
             panos.each do |pano|
               p = FinishVisionVR::RenderingPlugin.get_page_for_pano(pano["Name"])
@@ -293,8 +297,20 @@ module FinishVisionVR
 
         def self.setup_screenshot_rendering
           model = Sketchup.active_model
-          non_screenshot_pages = model.pages.select{ |p| !p.name.include? "Enscape View" }
           screenshot_page = model.pages.find { |p| p.name.include? "Enscape View" }
+          non_screenshot_pages = model.pages.select do |p|
+            # Only pages named Enscape View are screenshots
+            next false unless p.name.include?("Enscape View")
+
+            result = /[fF][vV]\d{3}/.match(p.name)
+            if result.nil?
+              settings_codes = [DEFAULT_SETTINGS_CODE]
+            else
+              settings_codes = result
+            end
+
+            next settings_codes.include?(@@current_settings_code)
+          end
 
           # Switch to an Enscape View and remove non screenshot views
           model.pages.selected_page = screenshot_page
