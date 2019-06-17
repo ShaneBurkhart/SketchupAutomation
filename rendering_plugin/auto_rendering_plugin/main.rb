@@ -45,6 +45,8 @@ require "auto_rendering_plugin/models.rb"
 
 module FinishVisionVR
     module RenderingPlugin
+        MIN_FP_HEIGHT = 420 # 35ft * 12
+
         # Try not to use spaces
         PANO_NAME_LOOKUP = {
           "living room" => ["living room", "living"],
@@ -274,8 +276,8 @@ module FinishVisionVR
            height = h.to_f
            target_width = height * 1.7777
 
-           # Add 120 for wall height
-           camera_height = target_width/(2*Math.tan(fov/2*Math::PI/180))+30+z
+           # Factor in minimum height
+           camera_height = [target_width/(2*Math.tan(fov/2*Math::PI/180))+30+z, FinishVisionVR::RenderingPlugin::MIN_FP_HEIGHT].max
 
            center_x = x+width/2
            center_y = y+height/2
@@ -302,7 +304,7 @@ module FinishVisionVR
           model.pages.each { |p| p.transition_time = 0 }
           model.options["PageOptions"]["TransitionTime"] = 0
 
-          page = model.pages.find { |p| p.name.include? "Enscape View" }
+          page = model.pages.find { |p| p.name.downcase.include? "enscape view" }
           model.pages.selected_page = page unless page.nil?
         end
 
