@@ -334,13 +334,13 @@ async def render(unit_version, skp_file_path):
 
         # Turn on live updates again.
         type_keys(window, LIVE_UPDATES_KEY)
-        await asyncio.sleep(10)
+        await asyncio.sleep(15)
 
         RENDER_PANO_LOCK.acquire()
         # Render!
         type_keys(window, TAKE_MONO_PANO_KEY)
 
-        await asyncio.sleep(120)
+        await asyncio.sleep(180)
 
         pano_num = len(pano_files) + 1
         file = os.path.join(ENSCAPE_PANO_DIR, "panorama_%i.xml" % pano_num)
