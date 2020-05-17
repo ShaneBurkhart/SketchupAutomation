@@ -3,3 +3,4 @@ secrets.rb
 .sem
 *.zip
 .env
+__pycache__
