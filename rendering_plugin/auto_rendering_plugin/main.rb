@@ -256,7 +256,7 @@ module FinishVisionVR
            walls = []
            Sketchup.active_model.entities.each do |e|
                # 48" = 4' Most walls are at least 4'
-               walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 48
+             walls << e unless e.hidden? #e.is_a?(Sketchup::Face) and e.bounds.depth > 48
            end
 
            # Create a virtual bounding box
