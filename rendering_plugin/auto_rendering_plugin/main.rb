@@ -255,8 +255,8 @@ module FinishVisionVR
 
            walls = []
            Sketchup.active_model.entities.each do |e|
-               # 72 = 7' Most walls are at least 7'
-               walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 72
+               # 48" = 4' Most walls are at least 4'
+               walls << e if e.is_a?(Sketchup::Face) and e.bounds.depth > 48
            end
 
            # Create a virtual bounding box
@@ -312,7 +312,7 @@ module FinishVisionVR
           model = Sketchup.active_model
           non_screenshot_pages = model.pages.select do |p|
             # Only pages named Enscape View are screenshots
-            next true if !p.name.include?("Enscape View")
+            next true if !p.name.downcase.include?("enscape view")
 
             result = /[fF][vV]\d{3}/.match(p.name)
             if result.nil?
