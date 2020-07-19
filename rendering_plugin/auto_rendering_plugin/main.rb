@@ -255,23 +255,29 @@ module FinishVisionVR
 
            walls = []
            Sketchup.active_model.entities.each do |e|
-               # 48" = 4' Most walls are at least 4'
-             walls << e unless e.hidden? #e.is_a?(Sketchup::Face) and e.bounds.depth > 48
+             next if e.hidden?
+             sum = 0
+             sum = sum + 1 if e.bounds.width < 12
+             sum = sum + 1 if e.bounds.height < 12
+             sum = sum + 1 if e.bounds.depth < 12
+             # Make sure at least 2 sides are greater than a foot. Ignore tiny objects.
+             next if sum < 2
+
+             walls << e
            end
 
            # Create a virtual bounding box
            bbox = Geom::BoundingBox.new
            walls.each { |ent| bbox.add(ent.bounds) rescue nil }
            # Get the bottom front left corner as a Geom::Point3d
-           origin = bbox.corner(0)
            # Use Ruby's multiple assignment
-           x, y, z = origin.to_a
+           x, y, z = bbox.center.to_a
            w = bbox.width
            h = bbox.height
            d = bbox.depth
 
            # Enscape default FOV
-           fov = 70.0
+           fov = 90.0
            width = w.to_f
            height = h.to_f
            target_width = height * 1.7777
@@ -279,8 +285,8 @@ module FinishVisionVR
            # Factor in minimum height
            camera_height = [target_width/(2*Math.tan(fov/2*Math::PI/180))+30+z, FinishVisionVR::RenderingPlugin::MIN_FP_HEIGHT].max
 
-           center_x = x+width/2
-           center_y = y+height/2
+           center_x = x
+           center_y = y
            eye_x = center_x
            eye_y = center_y-50
 
