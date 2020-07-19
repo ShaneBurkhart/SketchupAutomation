@@ -257,9 +257,9 @@ module FinishVisionVR
            Sketchup.active_model.entities.each do |e|
              next if e.hidden?
              sum = 0
-             sum = sum + 1 if e.bounds.width < 12
-             sum = sum + 1 if e.bounds.height < 12
-             sum = sum + 1 if e.bounds.depth < 12
+             sum = sum + 1 if e.bounds.width > 12
+             sum = sum + 1 if e.bounds.height > 12
+             sum = sum + 1 if e.bounds.depth > 12
              # Make sure at least 2 sides are greater than a foot. Ignore tiny objects.
              next if sum < 2
 
