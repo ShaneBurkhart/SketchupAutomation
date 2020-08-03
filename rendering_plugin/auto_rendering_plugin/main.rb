@@ -310,7 +310,7 @@ module FinishVisionVR
           model.pages.each { |p| p.transition_time = 0 }
           model.options["PageOptions"]["TransitionTime"] = 0
 
-          page = model.pages.find { |p| p.name.downcase.include? "enscape view" }
+          page = model.pages.find { |p| p.name.downcase.include? "enscape" }
           model.pages.selected_page = page unless page.nil?
         end
 
@@ -318,7 +318,7 @@ module FinishVisionVR
           model = Sketchup.active_model
           non_screenshot_pages = model.pages.select do |p|
             # Only pages named Enscape View are screenshots
-            next true if !p.name.downcase.include?("enscape view")
+            next true if !p.name.downcase.include?("enscape")
 
             result = /[fF][vV]\d{3}/.match(p.name)
             if result.nil?
